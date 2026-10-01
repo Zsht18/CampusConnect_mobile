@@ -1,5 +1,6 @@
 package com.example.campusconnect;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -14,6 +15,14 @@ public class CreatePostActivity extends AppCompatActivity {
         Button btnCancel = findViewById(R.id.btnCancel);
         if (btnCancel != null) {
             btnCancel.setOnClickListener(v -> finish());
+        }
+
+        View profileIconBtn = findViewById(R.id.profileIconBtn);
+        if (profileIconBtn != null) {
+            profileIconBtn.setOnClickListener(v -> {
+                Intent intent = new Intent(CreatePostActivity.this, ProfileActivity.class);
+                startActivity(intent);
+            });
         }
     }
 }

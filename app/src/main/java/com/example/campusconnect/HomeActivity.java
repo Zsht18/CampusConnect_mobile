@@ -81,6 +81,11 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    public void openPostDetails(View view) {
+        android.content.Intent intent = new android.content.Intent(HomeActivity.this, PostDetailsActivity.class);
+        startActivity(intent);
+    }
+
     private void updateTabStyles(TextView selectedTab) {
         // Reset all tabs to default unselected style
         TextView[] allTabs = {tabBest, tabHot, tabNew, tabTop};

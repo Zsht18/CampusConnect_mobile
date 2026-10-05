@@ -10,4 +10,9 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
     }
+
+    public void openPostDetails(android.view.View view) {
+        android.content.Intent intent = new android.content.Intent(ProfileActivity.this, PostDetailsActivity.class);
+        startActivity(intent);
+    }
 }

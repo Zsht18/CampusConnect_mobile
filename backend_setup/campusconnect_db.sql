@@ -1,0 +1,44 @@
+-- CampusConnect Database Schema
+-- You can import this into your Hostinger phpMyAdmin
+
+CREATE TABLE `mobile_users` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `institutional_email` varchar(100) NOT NULL,
+  `id_number` varchar(50) NOT NULL,
+  `full_name` varchar(100) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `profile_pic_url` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email_unique` (`institutional_email`),
+  UNIQUE KEY `username_unique` (`username`),
+  UNIQUE KEY `idnumber_unique` (`id_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `mobile_posts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `category` varchar(50) NOT NULL,
+  `content` text NOT NULL,
+  `file_url` varchar(255) DEFAULT NULL,
+  `is_anonymous` tinyint(1) DEFAULT 0,
+  `approvals` int(11) DEFAULT 0,
+  `shares` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `mobile_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `mobile_comments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `post_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `content` text NOT NULL,
+  `likes` int(11) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`post_id`) REFERENCES `mobile_posts` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`user_id`) REFERENCES `mobile_users` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

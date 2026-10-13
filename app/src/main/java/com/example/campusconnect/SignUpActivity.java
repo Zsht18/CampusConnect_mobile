@@ -41,13 +41,49 @@ public class SignUpActivity extends AppCompatActivity {
         });
 
         signUpButton.setOnClickListener(v -> {
-            Toast.makeText(SignUpActivity.this, "Sign Up Clicked", Toast.LENGTH_SHORT).show();
-            // TODO: Add Sign Up logic here
-        });
+            String email = emailEditText.getText().toString().trim();
+            String idNumber = idNumberEditText.getText().toString().trim();
+            String fullName = fullNameEditText.getText().toString().trim();
+            String username = usernameEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString().trim();
+            String retypePassword = retypePasswordEditText.getText().toString().trim();
 
-        returnToLoginText.setOnClickListener(v -> {
-            // Simply finish this activity to return to the previous one (LoginActivity)
-            finish();
+            if (email.isEmpty() || idNumber.isEmpty() || fullName.isEmpty() || username.isEmpty() || password.isEmpty()) {
+                Toast.makeText(SignUpActivity.this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (!password.equals(retypePassword)) {
+                Toast.makeText(SignUpActivity.this, "Passwords do not match.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Toast.makeText(SignUpActivity.this, "Signing up...", Toast.LENGTH_SHORT).show();
+
+            // Once your Hostinger API is live, uncomment the code below to connect to the database!
+            com.example.campusconnect.api.ApiService apiService =
+                com.example.campusconnect.api.ApiClient.getClient().create(com.example.campusconnect.api.ApiService.class);
+            
+            retrofit2.Call<com.example.campusconnect.models.SignupResponse> call = apiService.signup(email, idNumber, fullName, username, password);
+            call.enqueue(new retrofit2.Callback<com.example.campusconnect.models.SignupResponse>() {
+                @Override
+                public void onResponse(retrofit2.Call<com.example.campusconnect.models.SignupResponse> call, retrofit2.Response<com.example.campusconnect.models.SignupResponse> response) {
+                    if (response.isSuccessful() && response.body() != null) {
+                        Toast.makeText(SignUpActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                        if (response.body().isSuccess()) {
+                            finish(); // Return to Login
+                        }
+                    } else {
+                        Toast.makeText(SignUpActivity.this, "Signup failed. Please try again.", Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(retrofit2.Call<com.example.campusconnect.models.SignupResponse> call, Throwable t) {
+                    Toast.makeText(SignUpActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            });
+
         });
     }
 }

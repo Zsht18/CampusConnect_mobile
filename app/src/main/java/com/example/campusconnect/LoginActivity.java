@@ -33,10 +33,35 @@ public class LoginActivity extends AppCompatActivity {
             if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(LoginActivity.this, "Please enter both email and password.", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
-                startActivity(intent);
-                finish(); // Close login activity
+                Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
+
+                com.example.campusconnect.api.ApiService apiService =
+                    com.example.campusconnect.api.ApiClient.getClient().create(com.example.campusconnect.api.ApiService.class);
+
+                retrofit2.Call<com.example.campusconnect.models.LoginResponse> call = apiService.login(email, password);
+                call.enqueue(new retrofit2.Callback<com.example.campusconnect.models.LoginResponse>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<com.example.campusconnect.models.LoginResponse> call, retrofit2.Response<com.example.campusconnect.models.LoginResponse> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            if (response.body().isSuccess()) {
+                                Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                                android.content.Intent intent = new android.content.Intent(LoginActivity.this, HomeActivity.class);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                // This will print either "Wrong email" or "Wrong password" dynamically from the database
+                                Toast.makeText(LoginActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(LoginActivity.this, "Server Error. Please try again.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<com.example.campusconnect.models.LoginResponse> call, Throwable t) {
+                        Toast.makeText(LoginActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
             }
         });
 

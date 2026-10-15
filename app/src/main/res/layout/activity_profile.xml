@@ -135,9 +135,10 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/profileUsernameText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="IT_Stoods_2004"
+                            android:text="Guest"
                             android:textColor="#000000"
                             android:textStyle="bold"
                             android:textSize="18sp" />
@@ -179,6 +180,7 @@
                         android:gravity="center"
                         android:orientation="vertical">
                         <TextView
+                            android:id="@+id/accountAgeText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="2 Months"
@@ -201,6 +203,7 @@
                         android:gravity="center"
                         android:orientation="vertical">
                         <TextView
+                            android:id="@+id/postsCountText"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="1 Posts"

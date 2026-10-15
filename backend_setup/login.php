@@ -10,8 +10,10 @@ $email = isset($_POST['email']) ? $_POST['email'] : '';
 $password = isset($_POST['password']) ? $_POST['password'] : '';
 
 if(!empty($email) && !empty($password)){
-    // Fetch user from database
-    $query = "SELECT id, institutional_email, full_name, password_hash FROM mobile_users WHERE institutional_email = :email LIMIT 0,1";
+    // Fetch user from database and count their posts
+    $query = "SELECT u.id, u.institutional_email, u.full_name, u.password_hash, u.created_at,
+              (SELECT COUNT(*) FROM mobile_posts WHERE user_id = u.id) as posts_count
+              FROM mobile_users u WHERE u.institutional_email = :email LIMIT 0,1";
     $stmt = $conn->prepare($query);
     $stmt->bindParam(':email', $email);
     $stmt->execute();
@@ -27,7 +29,9 @@ if(!empty($email) && !empty($password)){
             $user_arr = array(
                 "id" => $row['id'],
                 "email" => $row['institutional_email'],
-                "full_name" => $row['full_name']
+                "full_name" => $row['full_name'],
+                "created_at" => $row['created_at'],
+                "posts_count" => (int)$row['posts_count']
             );
 
             http_response_code(200);

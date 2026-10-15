@@ -45,6 +45,15 @@ public class LoginActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null) {
                             if (response.body().isSuccess()) {
                                 Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
+                                
+                                // Save user data globally using SharedPreferences
+                                android.content.SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                                android.content.SharedPreferences.Editor editor = prefs.edit();
+                                editor.putString("USER_FULL_NAME", response.body().getUser().getFullName());
+                                editor.putString("USER_CREATED_AT", response.body().getUser().getCreatedAt());
+                                editor.putInt("USER_POSTS_COUNT", response.body().getUser().getPostsCount());
+                                editor.apply();
+
                                 android.content.Intent intent = new android.content.Intent(LoginActivity.this, HomeActivity.class);
                                 startActivity(intent);
                                 finish();

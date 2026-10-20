@@ -3,6 +3,8 @@ package com.example.campusconnect;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
@@ -25,21 +27,19 @@ import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private TextView tabBest, tabHot, tabNew, tabTop;
+    private TextView tabNew, tabHot, tabTop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        tabBest = findViewById(R.id.tabBest);
-        tabHot = findViewById(R.id.tabHot);
         tabNew = findViewById(R.id.tabNew);
+        tabHot = findViewById(R.id.tabHot);
         tabTop = findViewById(R.id.tabTop);
         
-        View feedBest = findViewById(R.id.feedBest);
-        View feedHot = findViewById(R.id.feedHot);
         View feedNew = findViewById(R.id.feedNew);
+        View feedHot = findViewById(R.id.feedHot);
         View feedTop = findViewById(R.id.feedTop);
 
         View profileIconBtn = findViewById(R.id.profileIconBtn);
@@ -59,38 +59,26 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
-        if (tabBest != null) {
-            tabBest.setOnClickListener(v -> {
-                feedBest.setVisibility(View.VISIBLE);
-                feedHot.setVisibility(View.GONE);
-                feedNew.setVisibility(View.GONE);
-                feedTop.setVisibility(View.GONE);
-                updateTabStyles(tabBest);
-            });
-        }
-        if (tabHot != null) {
-            tabHot.setOnClickListener(v -> {
-                feedBest.setVisibility(View.GONE);
-                feedHot.setVisibility(View.VISIBLE);
-                feedNew.setVisibility(View.GONE);
-                feedTop.setVisibility(View.GONE);
-                updateTabStyles(tabHot);
-            });
-        }
         if (tabNew != null) {
             tabNew.setOnClickListener(v -> {
-                feedBest.setVisibility(View.GONE);
-                feedHot.setVisibility(View.GONE);
                 feedNew.setVisibility(View.VISIBLE);
+                feedHot.setVisibility(View.GONE);
                 feedTop.setVisibility(View.GONE);
                 updateTabStyles(tabNew);
             });
         }
+        if (tabHot != null) {
+            tabHot.setOnClickListener(v -> {
+                feedNew.setVisibility(View.GONE);
+                feedHot.setVisibility(View.VISIBLE);
+                feedTop.setVisibility(View.GONE);
+                updateTabStyles(tabHot);
+            });
+        }
         if (tabTop != null) {
             tabTop.setOnClickListener(v -> {
-                feedBest.setVisibility(View.GONE);
-                feedHot.setVisibility(View.GONE);
                 feedNew.setVisibility(View.GONE);
+                feedHot.setVisibility(View.GONE);
                 feedTop.setVisibility(View.VISIBLE);
                 updateTabStyles(tabTop);
             });
@@ -98,6 +86,19 @@ public class HomeActivity extends AppCompatActivity {
 
         EditText searchEditText = findViewById(R.id.searchEditText);
         if (searchEditText != null) {
+            searchEditText.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    fetchLivePosts(s.toString().trim());
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+
             searchEditText.setOnEditorActionListener((v, actionId, event) -> {
                 if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
                     (event != null && event.getKeyCode() == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN)) {
@@ -105,6 +106,7 @@ public class HomeActivity extends AppCompatActivity {
                     if (!query.isEmpty()) {
                         recordSearchQuery(query);
                     }
+                    fetchLivePosts(query);
                     return true;
                 }
                 return false;
@@ -115,7 +117,9 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        fetchLivePosts();
+        EditText searchEditText = findViewById(R.id.searchEditText);
+        String query = searchEditText != null ? searchEditText.getText().toString().trim() : null;
+        fetchLivePosts(query);
         fetchTrendingSearches();
     }
 
@@ -143,12 +147,14 @@ public class HomeActivity extends AppCompatActivity {
             public void onResponse(Call<List<SearchModel>> call, Response<List<SearchModel>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     populateTrendingSearches(response.body());
+                } else {
+                    populateTrendingSearches(null);
                 }
             }
 
             @Override
             public void onFailure(Call<List<SearchModel>> call, Throwable t) {
-                // Ignore
+                populateTrendingSearches(null);
             }
         });
     }
@@ -177,6 +183,7 @@ public class HomeActivity extends AppCompatActivity {
                         searchInput.setText(search.getQuery());
                         searchInput.setSelection(search.getQuery().length());
                         recordSearchQuery(search.getQuery());
+                        fetchLivePosts(search.getQuery());
                     }
                 });
                 container.addView(itemText);
@@ -185,8 +192,13 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void fetchLivePosts() {
+        fetchLivePosts(null);
+    }
+
+    private void fetchLivePosts(String searchQuery) {
+        String cleanQuery = (searchQuery != null && !searchQuery.isEmpty()) ? searchQuery : null;
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<List<PostModel>> call = apiService.getPosts(null, null);
+        Call<List<PostModel>> call = apiService.getPosts(null, null, cleanQuery);
         call.enqueue(new Callback<List<PostModel>>() {
             @Override
             public void onResponse(Call<List<PostModel>> call, Response<List<PostModel>> response) {
@@ -203,18 +215,17 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void populatePosts(List<PostModel> posts) {
-        LinearLayout postsContainerBest = findViewById(R.id.postsContainerBest);
-        LinearLayout postsContainerHot = findViewById(R.id.postsContainerHot);
         LinearLayout postsContainerNew = findViewById(R.id.postsContainerNew);
+        LinearLayout postsContainerHot = findViewById(R.id.postsContainerHot);
         LinearLayout postsContainerTop = findViewById(R.id.postsContainerTop);
 
-        LinearLayout[] containers = {postsContainerBest, postsContainerHot, postsContainerNew, postsContainerTop};
+        LinearLayout[] containers = {postsContainerNew, postsContainerHot, postsContainerTop};
         for (LinearLayout container : containers) {
             if (container != null) {
                 container.removeAllViews();
                 if (posts == null || posts.isEmpty()) {
                     TextView emptyView = new TextView(this);
-                    emptyView.setText("No posts yet. Tap + to create one!");
+                    emptyView.setText("No posts found.");
                     emptyView.setGravity(Gravity.CENTER);
                     emptyView.setPadding(32, 48, 32, 48);
                     emptyView.setTextColor(Color.parseColor("#888888"));
@@ -358,7 +369,16 @@ public class HomeActivity extends AppCompatActivity {
             if (optionEdit != null) {
                 optionEdit.setOnClickListener(v -> {
                     dialog.dismiss();
-                    Toast.makeText(this, "Edit Post feature coming soon!", Toast.LENGTH_SHORT).show();
+                    if (post != null) {
+                        Intent intent = new Intent(HomeActivity.this, EditPostActivity.class);
+                        intent.putExtra("POST_ID", post.getId());
+                        intent.putExtra("POST_USER_ID", post.getUserId());
+                        intent.putExtra("POST_TITLE", post.getTitle());
+                        intent.putExtra("POST_CATEGORY", post.getCategory());
+                        intent.putExtra("POST_CONTENT", post.getContent());
+                        intent.putExtra("POST_IS_ANONYMOUS", post.getIsAnonymous());
+                        startActivity(intent);
+                    }
                 });
             }
 
@@ -410,7 +430,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void updateTabStyles(TextView selectedTab) {
-        TextView[] allTabs = {tabBest, tabHot, tabNew, tabTop};
+        TextView[] allTabs = {tabNew, tabHot, tabTop};
         for (TextView tab : allTabs) {
             if (tab != null) {
                 tab.setBackground(null);

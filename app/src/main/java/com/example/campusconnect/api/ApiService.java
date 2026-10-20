@@ -39,7 +39,8 @@ public interface ApiService {
     @retrofit2.http.GET("get_posts.php")
     Call<java.util.List<com.example.campusconnect.models.PostModel>> getPosts(
             @retrofit2.http.Query("category") String category,
-            @retrofit2.http.Query("user_id") Integer userId
+            @retrofit2.http.Query("user_id") Integer userId,
+            @retrofit2.http.Query("search") String search
     );
 
     @FormUrlEncoded
@@ -76,5 +77,16 @@ public interface ApiService {
     Call<com.example.campusconnect.models.GenericResponse> deleteComment(
             @Field("comment_id") int commentId,
             @Field("user_id") int userId
+    );
+
+    @FormUrlEncoded
+    @POST("update_post.php")
+    Call<com.example.campusconnect.models.GenericResponse> updatePost(
+            @Field("post_id") int postId,
+            @Field("user_id") int userId,
+            @Field("title") String title,
+            @Field("category") String category,
+            @Field("content") String content,
+            @Field("is_anonymous") int isAnonymous
     );
 }

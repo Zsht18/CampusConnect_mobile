@@ -141,11 +141,67 @@
                 </LinearLayout>
 
                 <!-- Tabs -->
-                <HorizontalScrollView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:scrollbars="none">
+                    android:orientation="horizontal"
+                    android:weightSum="3">
+
+                    <!-- New Tab -->
+                    <TextView
+                        android:id="@+id/tabNew"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/tab_best_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="☀️ New"
+                        android:textColor="#000000"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <!-- Hot Tab -->
+                    <TextView
+                        android:id="@+id/tabHot"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="🔥 Hot"
+                        android:textColor="#666666"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <!-- Top Tab -->
+                    <TextView
+                        android:id="@+id/tabTop"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="⬆️ Top"
+                        android:textColor="#666666"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Most Frequent Searches Card -->
+                <LinearLayout
+                    android:id="@+id/trendingSearchesCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/dark_card_bg"
+                    android:orientation="vertical"
+                    android:padding="20dp"
+                    android:visibility="gone">
 
                     <LinearLayout
                         android:layout_width="wrap_content"
@@ -153,131 +209,50 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                    <!-- Best Tab -->
-                    <TextView
-                        android:id="@+id/tabBest"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:background="@drawable/tab_best_bg"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="🚀 Best"
-                        android:textColor="#000000"
-                        android:textStyle="bold"
-                        android:textSize="14sp" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔍"
+                            android:textSize="16sp" />
 
-                    <!-- Hot Tab -->
-                    <TextView
-                        android:id="@+id/tabHot"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="16dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="🔥 Hot"
-                        android:textColor="#666666"
-                        android:textStyle="bold"
-                        android:textSize="14sp" />
-
-                    <!-- New Tab -->
-                    <TextView
-                        android:id="@+id/tabNew"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="16dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="☀️ New"
-                        android:textColor="#666666"
-                        android:textStyle="bold"
-                        android:textSize="14sp" />
-
-                    <!-- Top Tab -->
-                    <TextView
-                        android:id="@+id/tabTop"
-                        android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:layout_marginStart="16dp"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="⬆️ Top"
-                        android:textColor="#666666"
-                        android:textStyle="bold"
-                        android:textSize="14sp"
-                        android:singleLine="true" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Most frequent searches"
+                            android:textColor="#FFFFFF"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
                     </LinearLayout>
-                </HorizontalScrollView>
+
+                    <LinearLayout
+                        android:id="@+id/trendingSearchesContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="vertical" />
+                </LinearLayout>
 
                 <!-- Feeds Container -->
                 <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginBottom="20dp">
 
-                    <!-- Best Feed -->
+                    <!-- New Feed -->
                     <LinearLayout
-                        android:id="@+id/feedBest"
+                        android:id="@+id/feedNew"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical">
-
-                        <!-- Most Frequent Searches Card -->
-                        <LinearLayout
-                            android:id="@+id/trendingSearchesCard"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/dark_card_bg"
-                            android:orientation="vertical"
-                            android:padding="20dp">
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal">
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="🔍"
-                                    android:textSize="16sp" />
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="8dp"
-                                    android:text="Most frequent searches"
-                                    android:textColor="#FFFFFF"
-                                    android:textStyle="bold"
-                                    android:textSize="16sp" />
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/trendingSearchesContainer"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:layout_marginTop="8dp" />
-                        </LinearLayout>
+                        android:orientation="vertical"
+                        android:visibility="visible">
 
                         <LinearLayout
-                            android:id="@+id/postsContainerBest"
+                            android:id="@+id/postsContainerNew"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:layout_marginTop="16dp" />
-
+                            android:orientation="vertical" />
                     </LinearLayout>
 
                     <!-- Hot Feed -->
@@ -290,21 +265,6 @@
 
                         <LinearLayout
                             android:id="@+id/postsContainerHot"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical" />
-                    </LinearLayout>
-
-                    <!-- New Feed -->
-                    <LinearLayout
-                        android:id="@+id/feedNew"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:visibility="gone">
-
-                        <LinearLayout
-                            android:id="@+id/postsContainerNew"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="vertical" />

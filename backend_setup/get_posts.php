@@ -8,9 +8,10 @@ include_once 'db_connect.php';
 
 $category = isset($_GET['category']) ? trim($_GET['category']) : '';
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+$search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $query = "SELECT p.id, p.user_id, p.title, p.category, p.content, p.file_url, p.is_anonymous, p.approvals, p.shares, p.created_at,
-          IF(p.is_anonymous = 1, 'Anonymous Student', u.username) as author_name,
+          IF(p.is_anonymous = 1, CONCAT(IFNULL(SUBSTRING(u.username, 1, 1), 'A'), '.....'), u.username) as author_name,
           (SELECT COUNT(*) FROM mobile_comments WHERE post_id = p.id) as comments_count
           FROM mobile_posts p
           LEFT JOIN mobile_users u ON p.user_id = u.id ";
@@ -26,6 +27,11 @@ if($user_id > 0){
 if(!empty($category) && $category !== 'All'){
     $conditions[] = "p.category = :category";
     $params[':category'] = $category;
+}
+
+if(!empty($search)){
+    $conditions[] = "(p.title LIKE :search OR p.content LIKE :search OR p.category LIKE :search)";
+    $params[':search'] = '%' . $search . '%';
 }
 
 if(count($conditions) > 0){

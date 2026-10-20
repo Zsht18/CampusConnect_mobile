@@ -303,7 +303,12 @@ public class PostDetailsActivity extends AppCompatActivity {
             if (optionEdit != null) {
                 optionEdit.setOnClickListener(v -> {
                     dialog.dismiss();
-                    Toast.makeText(this, "Edit Post feature coming soon!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(PostDetailsActivity.this, EditPostActivity.class);
+                    intent.putExtra("POST_ID", postId);
+                    intent.putExtra("POST_USER_ID", postUserId);
+                    intent.putExtra("POST_TITLE", getIntent().getStringExtra("POST_TITLE"));
+                    intent.putExtra("POST_CONTENT", getIntent().getStringExtra("POST_CONTENT"));
+                    startActivity(intent);
                 });
             }
 

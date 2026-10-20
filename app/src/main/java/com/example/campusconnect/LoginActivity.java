@@ -50,6 +50,9 @@ public class LoginActivity extends AppCompatActivity {
                                 android.content.SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
                                 android.content.SharedPreferences.Editor editor = prefs.edit();
                                 editor.putString("USER_FULL_NAME", response.body().getUser().getFullName());
+                                if (response.body().getUser().getUsername() != null) {
+                                    editor.putString("USER_USERNAME", response.body().getUser().getUsername());
+                                }
                                 editor.putString("USER_CREATED_AT", response.body().getUser().getCreatedAt());
                                 editor.putInt("USER_POSTS_COUNT", response.body().getUser().getPostsCount());
                                 try {

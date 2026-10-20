@@ -31,6 +31,7 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
 
         TextView profileUsernameText = findViewById(R.id.profileUsernameText);
+        TextView profileHandleText = findViewById(R.id.profileHandleText);
         TextView accountAgeText = findViewById(R.id.accountAgeText);
         TextView postsCountText = findViewById(R.id.postsCountText);
         
@@ -39,6 +40,13 @@ public class ProfileActivity extends AppCompatActivity {
         String fullName = prefs.getString("USER_FULL_NAME", "");
         if (fullName != null && !fullName.isEmpty() && profileUsernameText != null) {
             profileUsernameText.setText(fullName);
+        }
+
+        String username = prefs.getString("USER_USERNAME", "");
+        if (username != null && !username.isEmpty() && profileHandleText != null) {
+            profileHandleText.setText(username.startsWith("@") ? username : "@" + username);
+        } else if (profileHandleText != null && fullName != null && !fullName.isEmpty()) {
+            profileHandleText.setText("@" + fullName.toLowerCase().replaceAll("\\s+", ""));
         }
 
         int postsCount = prefs.getInt("USER_POSTS_COUNT", -1);
@@ -102,7 +110,7 @@ public class ProfileActivity extends AppCompatActivity {
         int userId = prefs.getInt("USER_ID", 1);
 
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<List<PostModel>> call = apiService.getPosts(null, userId);
+        Call<List<PostModel>> call = apiService.getPosts(null, userId, null);
 
         call.enqueue(new Callback<List<PostModel>>() {
             @Override
@@ -258,7 +266,16 @@ public class ProfileActivity extends AppCompatActivity {
             if (optionEdit != null) {
                 optionEdit.setOnClickListener(v -> {
                     dialog.dismiss();
-                    Toast.makeText(this, "Edit Post feature coming soon!", Toast.LENGTH_SHORT).show();
+                    if (post != null) {
+                        Intent intent = new Intent(ProfileActivity.this, EditPostActivity.class);
+                        intent.putExtra("POST_ID", post.getId());
+                        intent.putExtra("POST_USER_ID", post.getUserId());
+                        intent.putExtra("POST_TITLE", post.getTitle());
+                        intent.putExtra("POST_CATEGORY", post.getCategory());
+                        intent.putExtra("POST_CONTENT", post.getContent());
+                        intent.putExtra("POST_IS_ANONYMOUS", post.getIsAnonymous());
+                        startActivity(intent);
+                    }
                 });
             }
 

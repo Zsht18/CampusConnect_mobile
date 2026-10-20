@@ -9,7 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private EditText emailEditText;
+    private EditText idNumberEditText;
     private EditText passwordEditText;
     private Button loginButton;
     private Button signUpButton;
@@ -20,25 +20,25 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login); // Binds the layout
 
         // Initialize Views
-        emailEditText = findViewById(R.id.emailEditText);
+        idNumberEditText = findViewById(R.id.idNumberEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
         signUpButton = findViewById(R.id.signUpButton);
 
         // Handle Login button click
         loginButton.setOnClickListener(v -> {
-            String email = emailEditText.getText().toString().trim();
+            String idNumber = idNumberEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
 
-            if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(LoginActivity.this, "Please enter both email and password.", Toast.LENGTH_SHORT).show();
+            if (idNumber.isEmpty() || password.isEmpty()) {
+                Toast.makeText(LoginActivity.this, "Please enter both ID Number and password.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
 
                 com.example.campusconnect.api.ApiService apiService =
                     com.example.campusconnect.api.ApiClient.getClient().create(com.example.campusconnect.api.ApiService.class);
 
-                retrofit2.Call<com.example.campusconnect.models.LoginResponse> call = apiService.login(email, password);
+                retrofit2.Call<com.example.campusconnect.models.LoginResponse> call = apiService.login(idNumber, password);
                 call.enqueue(new retrofit2.Callback<com.example.campusconnect.models.LoginResponse>() {
                     @Override
                     public void onResponse(retrofit2.Call<com.example.campusconnect.models.LoginResponse> call, retrofit2.Response<com.example.campusconnect.models.LoginResponse> response) {
@@ -52,17 +52,35 @@ public class LoginActivity extends AppCompatActivity {
                                 editor.putString("USER_FULL_NAME", response.body().getUser().getFullName());
                                 editor.putString("USER_CREATED_AT", response.body().getUser().getCreatedAt());
                                 editor.putInt("USER_POSTS_COUNT", response.body().getUser().getPostsCount());
+                                try {
+                                    int userId = Integer.parseInt(response.body().getUser().getId());
+                                    editor.putInt("USER_ID", userId);
+                                } catch (Exception e) {
+                                    editor.putInt("USER_ID", 1);
+                                }
                                 editor.apply();
 
                                 android.content.Intent intent = new android.content.Intent(LoginActivity.this, HomeActivity.class);
                                 startActivity(intent);
                                 finish();
                             } else {
-                                // This will print either "Wrong email" or "Wrong password" dynamically from the database
+                                // This will print either "Wrong ID Number" or "Wrong password" dynamically from the database
                                 Toast.makeText(LoginActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            Toast.makeText(LoginActivity.this, "Server Error. Please try again.", Toast.LENGTH_SHORT).show();
+                            try {
+                                String errorMsg = "Server Error (" + response.code() + ")";
+                                if (response.errorBody() != null) {
+                                    String errorJson = response.errorBody().string();
+                                    com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(errorJson).getAsJsonObject();
+                                    if (obj.has("message")) {
+                                        errorMsg = obj.get("message").getAsString();
+                                    }
+                                }
+                                Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
+                            } catch (Exception e) {
+                                Toast.makeText(LoginActivity.this, "Server Error (" + response.code() + ")", Toast.LENGTH_SHORT).show();
+                            }
                         }
                     }
 

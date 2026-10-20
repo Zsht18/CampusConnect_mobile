@@ -134,6 +134,7 @@
                         android:textSize="14sp" />
 
                     <EditText
+                        android:id="@+id/postTitleInput"
                         android:layout_width="match_parent"
                         android:layout_height="48dp"
                         android:layout_marginTop="8dp"
@@ -173,6 +174,7 @@
                         android:paddingEnd="16dp">
 
                         <EditText
+                            android:id="@+id/postCategoryInput"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:background="@null"
@@ -202,6 +204,7 @@
                         android:textSize="14sp" />
 
                     <EditText
+                        android:id="@+id/postContentInput"
                         android:layout_width="match_parent"
                         android:layout_height="120dp"
                         android:layout_marginTop="8dp"
@@ -329,6 +332,7 @@
                         </LinearLayout>
 
                         <Switch
+                            android:id="@+id/switchAnonymous"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:checked="false" />

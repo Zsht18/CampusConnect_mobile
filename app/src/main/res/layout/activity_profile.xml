@@ -151,16 +151,35 @@
                             android:textSize="13sp"
                             android:layout_marginTop="2dp" />
 
-                        <TextView
-                            android:layout_width="80dp"
-                            android:layout_height="32dp"
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:background="@drawable/profile_edit_btn_bg"
-                            android:gravity="center"
-                            android:text="EDIT"
-                            android:textColor="#FFFFFF"
-                            android:textStyle="bold"
-                            android:textSize="12sp" />
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:layout_width="70dp"
+                                android:layout_height="32dp"
+                                android:background="@drawable/profile_edit_btn_bg"
+                                android:gravity="center"
+                                android:text="EDIT"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <androidx.appcompat.widget.AppCompatButton
+                                android:id="@+id/logoutButton"
+                                android:layout_width="85dp"
+                                android:layout_height="32dp"
+                                android:layout_marginStart="8dp"
+                                android:background="@drawable/cancel_btn_bg"
+                                android:padding="0dp"
+                                android:text="LOG OUT"
+                                android:textAllCaps="true"
+                                android:textColor="#D32F2F"
+                                android:textSize="11sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -269,171 +288,16 @@
                     android:textColor="#666666"
                     android:textSize="12sp" />
 
-                <!-- Post Card -->
+                <!-- Dynamic Profile Posts Container -->
                 <LinearLayout
+                    android:id="@+id/profilePostsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
                     android:layout_marginStart="24dp"
                     android:layout_marginEnd="24dp"
-                    android:layout_marginBottom="24dp"
-                    android:background="@drawable/post_card_bg"
-                    android:orientation="vertical"
-                    android:paddingTop="20dp">
-
-                    <!-- Post Header -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="20dp"
-                        android:paddingEnd="20dp">
-
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            app:cardBackgroundColor="#E6E6FA"
-                            app:cardCornerRadius="20dp"
-                            app:cardElevation="0dp">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:text="👤"
-                                android:gravity="center"
-                                android:textSize="20sp"
-                                android:textColor="#483D8B"/>
-                        </androidx.cardview.widget.CardView>
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:text="IT_Stoods_2004"
-                            android:textColor="#333333"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="•••"
-                            android:textColor="#333333"
-                            android:textSize="18sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Post Content -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:paddingStart="20dp"
-                        android:paddingEnd="20dp"
-                        android:layout_marginBottom="24dp"
-                        android:text="Feeling ko Miguel building lobby ang pinaka nami tambayan mong. Or Basi cynthias. Kaso damo ko to utang. Hihihi"
-                        android:textColor="#333333"
-                        android:textSize="14sp"
-                        android:lineSpacingExtra="4dp"/>
-
-                    <!-- Divider -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#AAAAAA" />
-
-                    <!-- Actions -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:paddingTop="12dp"
-                        android:paddingBottom="12dp"
-                        android:paddingStart="20dp"
-                        android:paddingEnd="20dp">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="👍 15.7k Approvals"
-                            android:textColor="#333"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="📤 7.2k Shares"
-                            android:textColor="#333"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="💬 4.9k"
-                            android:textColor="#333"
-                            android:textSize="10sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <!-- Divider -->
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="#AAAAAA" />
-
-                    <!-- Add Comment -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
-
-                        <androidx.cardview.widget.CardView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            app:cardBackgroundColor="#E6E6FA"
-                            app:cardCornerRadius="16dp"
-                            app:cardElevation="0dp">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="match_parent"
-                                android:text="👤"
-                                android:gravity="center"
-                                android:textSize="16sp"
-                                android:textColor="#483D8B"/>
-                        </androidx.cardview.widget.CardView>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_marginStart="12dp"
-                            android:layout_weight="1"
-                            android:background="@drawable/comment_bg"
-                            android:gravity="center_vertical"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="12dp">
-
-                            <EditText
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:background="@null"
-                                android:hint="Add a comment.."
-                                android:textSize="10sp" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="🖼️"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="24dp" />
 
             </LinearLayout>
         </ScrollView>

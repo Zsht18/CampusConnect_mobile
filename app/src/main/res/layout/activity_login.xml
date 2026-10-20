@@ -47,12 +47,12 @@
             android:padding="24dp">
 
             <EditText
-                android:id="@+id/emailEditText"
+                android:id="@+id/idNumberEditText"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
                 android:background="@drawable/edit_text_bg"
-                android:hint="Institutional Email"
-                android:inputType="textEmailAddress"
+                android:hint="ID Number"
+                android:inputType="text"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
                 android:textSize="14sp" />

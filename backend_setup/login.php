@@ -6,16 +6,16 @@ header("Access-Control-Allow-Methods: POST");
 
 include_once 'db_connect.php';
 
-$email = isset($_POST['email']) ? $_POST['email'] : '';
+$id_number = isset($_POST['id_number']) ? $_POST['id_number'] : '';
 $password = isset($_POST['password']) ? $_POST['password'] : '';
 
-if(!empty($email) && !empty($password)){
+if(!empty($id_number) && !empty($password)){
     // Fetch user from database and count their posts
-    $query = "SELECT u.id, u.institutional_email, u.full_name, u.password_hash, u.created_at,
+    $query = "SELECT u.id, u.id_number, u.full_name, u.password_hash, u.created_at,
               (SELECT COUNT(*) FROM mobile_posts WHERE user_id = u.id) as posts_count
-              FROM mobile_users u WHERE u.institutional_email = :email LIMIT 0,1";
+              FROM mobile_users u WHERE u.id_number = :id_number LIMIT 0,1";
     $stmt = $conn->prepare($query);
-    $stmt->bindParam(':email', $email);
+    $stmt->bindParam(':id_number', $id_number);
     $stmt->execute();
 
     $num = $stmt->rowCount();
@@ -28,7 +28,7 @@ if(!empty($email) && !empty($password)){
             // Login Success
             $user_arr = array(
                 "id" => $row['id'],
-                "email" => $row['institutional_email'],
+                "id_number" => $row['id_number'],
                 "full_name" => $row['full_name'],
                 "created_at" => $row['created_at'],
                 "posts_count" => (int)$row['posts_count']
@@ -48,11 +48,11 @@ if(!empty($email) && !empty($password)){
     } else {
         // User not found
         http_response_code(200);
-        echo json_encode(array("success" => false, "message" => "Wrong email"));
+        echo json_encode(array("success" => false, "message" => "Wrong ID Number"));
     }
 } else {
     // Bad request
-    http_response_code(400);
-    echo json_encode(array("success" => false, "message" => "Incomplete data."));
+    http_response_code(200);
+    echo json_encode(array("success" => false, "message" => "Incomplete data. Please fill in ID Number and Password."));
 }
 ?>

@@ -42,3 +42,12 @@ CREATE TABLE `mobile_comments` (
   FOREIGN KEY (`post_id`) REFERENCES `mobile_posts` (`id`) ON DELETE CASCADE,
   FOREIGN KEY (`user_id`) REFERENCES `mobile_users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `mobile_searches` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `query` varchar(255) NOT NULL,
+  `search_count` int(11) NOT NULL DEFAULT 1,
+  `last_searched_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `query_unique` (`query`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

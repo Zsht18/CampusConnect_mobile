@@ -145,12 +145,14 @@
                         android:layout_weight="1"
                         android:orientation="vertical">
                         <TextView
+                            android:id="@+id/detailAuthorName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="KianaLy_20"
                             android:textColor="#333333"
                             android:textSize="14sp" />
                         <TextView
+                            android:id="@+id/detailTimestamp"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="2 hours ago"
@@ -159,8 +161,13 @@
                     </LinearLayout>
 
                     <TextView
+                        android:id="@+id/postOptionsBtn"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:padding="8dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:onClick="showPostOptions"
                         android:text="•••"
                         android:textColor="#333333"
                         android:textSize="24sp"
@@ -169,6 +176,7 @@
 
                 <!-- Post Content -->
                 <TextView
+                    android:id="@+id/detailTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -180,6 +188,7 @@
                     android:textSize="18sp" />
 
                 <TextView
+                    android:id="@+id/detailContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
@@ -219,6 +228,7 @@
                     android:gravity="center_vertical">
 
                     <TextView
+                        android:id="@+id/detailApprovals"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="👍 67 Approvals"
@@ -227,19 +237,23 @@
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/detailDislikes"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:text="📤 69 Shares"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:text="👎 0 Dislikes"
                         android:textColor="#333"
                         android:textSize="10sp"
                         android:textStyle="bold" />
 
                     <TextView
+                        android:id="@+id/detailCommentsCount"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="16dp"
-                        android:text="💬 25 comments"
+                        android:text="💬 0 comments"
                         android:textColor="#333"
                         android:textSize="10sp"
                         android:textStyle="bold" />
@@ -260,294 +274,23 @@
 
                 <!-- Comments Title -->
                 <TextView
+                    android:id="@+id/commentsTitleText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
                     android:paddingStart="24dp"
                     android:paddingEnd="24dp"
-                    android:text="💬 Comments (25)"
+                    android:text="💬 Comments (0)"
                     android:textColor="#000000"
                     android:textStyle="bold"
                     android:textSize="16sp" />
 
-                <!-- Comment 1 -->
+                <!-- Dynamic Comments Container -->
                 <LinearLayout
+                    android:id="@+id/commentsContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="24dp"
-                    android:paddingEnd="24dp">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        app:cardBackgroundColor="#E6E6FA"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp">
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:text="👤"
-                            android:gravity="center"
-                            android:textSize="18sp"
-                            android:textColor="#483D8B"/>
-                    </androidx.cardview.widget.CardView>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Lilacnotes"
-                                android:textColor="#333333"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:text="2 hours ago"
-                                android:textColor="#999999"
-                                android:textSize="10sp" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="⋮"
-                                android:textColor="#666666"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/comment_bubble_dark_bg"
-                            android:padding="12dp"
-                            android:text="Thank you! This helped me understand the formula."
-                            android:textColor="#DDDDDD"
-                            android:textSize="12sp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Reply"
-                                android:textColor="#000000"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="♡ 12"
-                                android:textColor="#666666"
-                                android:textSize="10sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Comment 2 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="24dp"
-                    android:paddingEnd="24dp">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        app:cardBackgroundColor="#E6E6FA"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp">
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:text="👤"
-                            android:gravity="center"
-                            android:textSize="18sp"
-                            android:textColor="#483D8B"/>
-                    </androidx.cardview.widget.CardView>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Larydee"
-                                android:textColor="#333333"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:text="1 hour ago"
-                                android:textColor="#999999"
-                                android:textSize="10sp" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="⋮"
-                                android:textColor="#666666"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/comment_bubble_dark_bg"
-                            android:padding="12dp"
-                            android:text="Can you explain how you got the final answer?"
-                            android:textColor="#DDDDDD"
-                            android:textSize="12sp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Reply"
-                                android:textColor="#000000"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="♡ 8"
-                                android:textColor="#666666"
-                                android:textSize="10sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Comment 3 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="24dp"
-                    android:paddingEnd="24dp">
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        app:cardBackgroundColor="#E6E6FA"
-                        app:cardCornerRadius="16dp"
-                        app:cardElevation="0dp">
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:text="👤"
-                            android:gravity="center"
-                            android:textSize="18sp"
-                            android:textColor="#483D8B"/>
-                    </androidx.cardview.widget.CardView>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Anonymous Student"
-                                android:textColor="#333333"
-                                android:textSize="12sp" />
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="8dp"
-                                android:layout_weight="1"
-                                android:text="45 minutes ago"
-                                android:textColor="#999999"
-                                android:textSize="10sp" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="⋮"
-                                android:textColor="#666666"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:background="@drawable/comment_bubble_dark_bg"
-                            android:padding="12dp"
-                            android:text="This is so helpful! Thank you for sharing!💜"
-                            android:textColor="#DDDDDD"
-                            android:textSize="12sp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="Reply"
-                                android:textColor="#000000"
-                                android:textSize="10sp"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="♡ 5"
-                                android:textColor="#666666"
-                                android:textSize="10sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
+                    android:orientation="vertical" />
 
                 <!-- Add Comment Footer -->
                 <LinearLayout
@@ -585,6 +328,7 @@
                         android:paddingEnd="8dp">
 
                         <EditText
+                            android:id="@+id/commentInput"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
@@ -595,9 +339,12 @@
                             android:textSize="12sp" />
 
                         <FrameLayout
+                            android:id="@+id/btnSendComment"
                             android:layout_width="28dp"
                             android:layout_height="28dp"
-                            android:background="@drawable/circle_blue_bg">
+                            android:background="@drawable/circle_blue_bg"
+                            android:clickable="true"
+                            android:focusable="true">
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"

@@ -35,6 +35,8 @@
                 android:inputType="textEmailAddress"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
+                android:textColor="#333333"
+                android:textColorHint="#666666"
                 android:textSize="14sp" />
 
             <EditText
@@ -47,6 +49,8 @@
                 android:inputType="text"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
+                android:textColor="#333333"
+                android:textColorHint="#666666"
                 android:textSize="14sp" />
 
             <EditText
@@ -59,6 +63,8 @@
                 android:inputType="textPersonName"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
+                android:textColor="#333333"
+                android:textColorHint="#666666"
                 android:textSize="14sp" />
 
             <EditText
@@ -71,81 +77,97 @@
                 android:inputType="text"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/passwordEditText"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/edit_text_bg"
-                android:hint="Password"
-                android:inputType="textPassword"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/retypePasswordEditText"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/edit_text_bg"
-                android:hint="Retype Password"
-                android:inputType="textPassword"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:textSize="14sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="32dp"
-                android:text="UPLOAD PHOTO"
                 android:textColor="#333333"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/uploadPhotoButton"
-                android:layout_width="wrap_content"
-                android:layout_height="36dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/button_bg"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="UPLOAD PHOTO"
-                android:textColor="#333333"
+                android:textColorHint="#666666"
                 android:textSize="14sp" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/signUpButton"
-                android:layout_width="160dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="16dp"
-                android:background="@drawable/button_bg"
-                android:paddingStart="16dp"
-                android:paddingEnd="16dp"
-                android:text="Sign Up"
-                android:textAllCaps="false"
-                android:textColor="#000000"
-                android:textSize="14sp" />
-
-            <TextView
-                android:id="@+id/returnToLoginText"
-                android:layout_width="wrap_content"
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="12dp"
+                app:endIconMode="password_toggle"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/passwordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:background="@drawable/edit_text_bg"
+                    android:gravity="center_vertical"
+                    android:hint="Password"
+                    android:inputType="textPassword"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#333333"
+                    android:textColorHint="#666666"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                app:endIconMode="password_toggle"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/retypePasswordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:background="@drawable/edit_text_bg"
+                    android:gravity="center_vertical"
+                    android:hint="Retype Password"
+                    android:inputType="textPassword"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#333333"
+                    android:textColorHint="#666666"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
-                android:text="Return to Login"
-                android:textColor="#333333"
-                android:textSize="14sp"
-                android:clickable="true"
-                android:focusable="true" />
+                android:orientation="horizontal"
+                android:weightSum="8">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/returnToLoginBtn"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_marginEnd="6dp"
+                    android:layout_weight="5"
+                    android:background="@drawable/cancel_btn_bg"
+                    android:singleLine="true"
+                    android:text="Return to Login"
+                    android:textAllCaps="false"
+                    android:textColor="#333333"
+                    android:textSize="14sp"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/signUpButton"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="6dp"
+                    android:layout_weight="3"
+                    android:background="@drawable/submit_report_btn_bg"
+                    android:text="Sign Up"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="14sp"
+                    android:paddingStart="2dp"
+                    android:paddingEnd="2dp" />
+            </LinearLayout>
 
         </LinearLayout>
     </androidx.cardview.widget.CardView>

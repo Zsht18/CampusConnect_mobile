@@ -53,7 +53,7 @@ public class SavedPostsActivity extends AppCompatActivity {
                 postText += post.getContent();
             }
             content.setText(postText);
-            approvals.setText("👍 " + post.getApprovals() + " Approvals");
+            approvals.setText("👍 " + post.getApprovals() + " Likes");
             dislikes.setText("👎 " + post.getShares() + " Dislikes");
             comments.setText("💬 " + post.getCommentsCount());
             saveButton.setText("🔖 Saved");

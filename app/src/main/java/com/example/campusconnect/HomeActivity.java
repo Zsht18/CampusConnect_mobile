@@ -13,6 +13,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.campusconnect.api.ApiClient;
 import com.example.campusconnect.api.ApiService;
@@ -111,6 +112,16 @@ public class HomeActivity extends AppCompatActivity {
                     return true;
                 }
                 return false;
+            });
+        }
+
+        SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                String query = searchEditText != null ? searchEditText.getText().toString().trim() : null;
+                fetchLivePosts(query);
+                fetchTrendingSearches();
+                swipeRefreshLayout.setRefreshing(false);
             });
         }
     }
@@ -283,19 +294,19 @@ public class HomeActivity extends AppCompatActivity {
                         }
 
                         if (approvals != null) {
-                            approvals.setText("👍 " + post.getApprovals() + " Approvals");
+                            approvals.setText("👍 " + post.getApprovals() + " Likes");
                             final boolean[] isApproved = {false};
                             final int[] currentApprovals = {post.getApprovals()};
                             approvals.setOnClickListener(v -> {
                                 if (!isApproved[0]) {
                                     isApproved[0] = true;
                                     currentApprovals[0]++;
-                                    approvals.setText("👍 " + currentApprovals[0] + " Approvals");
+                                    approvals.setText("👍 " + currentApprovals[0] + " Likes");
                                     Toast.makeText(this, "Post approved!", Toast.LENGTH_SHORT).show();
                                 } else {
                                     isApproved[0] = false;
                                     currentApprovals[0]--;
-                                    approvals.setText("👍 " + currentApprovals[0] + " Approvals");
+                                    approvals.setText("👍 " + currentApprovals[0] + " Likes");
                                     Toast.makeText(this, "Approval removed", Toast.LENGTH_SHORT).show();
                                 }
                             });

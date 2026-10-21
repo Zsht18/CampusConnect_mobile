@@ -3,7 +3,6 @@ package com.example.campusconnect;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -15,9 +14,8 @@ public class SignUpActivity extends AppCompatActivity {
     private EditText usernameEditText;
     private EditText passwordEditText;
     private EditText retypePasswordEditText;
-    private Button uploadPhotoButton;
     private Button signUpButton;
-    private TextView returnToLoginText;
+    private Button returnToLoginBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,14 +29,12 @@ public class SignUpActivity extends AppCompatActivity {
         usernameEditText = findViewById(R.id.usernameEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         retypePasswordEditText = findViewById(R.id.retypePasswordEditText);
-        uploadPhotoButton = findViewById(R.id.uploadPhotoButton);
         signUpButton = findViewById(R.id.signUpButton);
-        returnToLoginText = findViewById(R.id.returnToLoginText);
+        returnToLoginBtn = findViewById(R.id.returnToLoginBtn);
 
-        uploadPhotoButton.setOnClickListener(v -> {
-            Toast.makeText(SignUpActivity.this, "Upload Photo Clicked", Toast.LENGTH_SHORT).show();
-            // TODO: Add logic to pick an image from the gallery
-        });
+        if (returnToLoginBtn != null) {
+            returnToLoginBtn.setOnClickListener(v -> finish());
+        }
 
         signUpButton.setOnClickListener(v -> {
             String email = emailEditText.getText().toString().trim();
@@ -60,7 +56,6 @@ public class SignUpActivity extends AppCompatActivity {
 
             Toast.makeText(SignUpActivity.this, "Signing up...", Toast.LENGTH_SHORT).show();
 
-            // Once your Hostinger API is live, uncomment the code below to connect to the database!
             com.example.campusconnect.api.ApiService apiService =
                 com.example.campusconnect.api.ApiClient.getClient().create(com.example.campusconnect.api.ApiService.class);
             

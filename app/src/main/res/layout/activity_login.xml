@@ -55,19 +55,34 @@
                 android:inputType="text"
                 android:paddingStart="12dp"
                 android:paddingEnd="12dp"
+                android:textColor="#333333"
+                android:textColorHint="#666666"
                 android:textSize="14sp" />
 
-            <EditText
-                android:id="@+id/passwordEditText"
+            <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
+                android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/edit_text_bg"
-                android:hint="Password"
-                android:inputType="textPassword"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
-                android:textSize="14sp" />
+                app:endIconMode="password_toggle"
+                app:hintEnabled="false">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/passwordEditText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:background="@drawable/edit_text_bg"
+                    android:gravity="center_vertical"
+                    android:hint="Password"
+                    android:inputType="textPassword"
+                    android:paddingTop="12dp"
+                    android:paddingBottom="12dp"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#333333"
+                    android:textColorHint="#666666"
+                    android:textSize="14sp" />
+            </com.google.android.material.textfield.TextInputLayout>
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/loginButton"
@@ -75,10 +90,10 @@
                 android:layout_height="40dp"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="24dp"
-                android:background="@drawable/button_bg"
+                android:background="@drawable/submit_report_btn_bg"
                 android:text="Log in"
                 android:textAllCaps="false"
-                android:textColor="#000000" />
+                android:textColor="#FFFFFF" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/signUpButton"
@@ -87,10 +102,10 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="12dp"
                 android:layout_marginBottom="8dp"
-                android:background="@drawable/button_bg"
+                android:background="@drawable/cancel_btn_bg"
                 android:text="Sign Up"
                 android:textAllCaps="false"
-                android:textColor="#000000" />
+                android:textColor="#333333" />
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 </androidx.constraintlayout.widget.ConstraintLayout>

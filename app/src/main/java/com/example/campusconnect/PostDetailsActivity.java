@@ -125,19 +125,19 @@ public class PostDetailsActivity extends AppCompatActivity {
             attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
         }
         if (approvalsText != null) {
-            approvalsText.setText("👍 " + approvals + " Approvals");
+            approvalsText.setText("👍 " + approvals + " Likes");
             final boolean[] isApproved = {false};
             final int[] currentApprovals = {approvals};
             approvalsText.setOnClickListener(v -> {
                 if (!isApproved[0]) {
                     isApproved[0] = true;
                     currentApprovals[0]++;
-                    approvalsText.setText("👍 " + currentApprovals[0] + " Approvals");
+                    approvalsText.setText("👍 " + currentApprovals[0] + " Likes");
                     Toast.makeText(this, "Post approved!", Toast.LENGTH_SHORT).show();
                 } else {
                     isApproved[0] = false;
                     currentApprovals[0]--;
-                    approvalsText.setText("👍 " + currentApprovals[0] + " Approvals");
+                    approvalsText.setText("👍 " + currentApprovals[0] + " Likes");
                     Toast.makeText(this, "Approval removed", Toast.LENGTH_SHORT).show();
                 }
             });

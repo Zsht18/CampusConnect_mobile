@@ -16,15 +16,15 @@ if($user_id > 0){
     $params = array(':user_id' => $user_id);
 
     if(!empty($username)){
-        // Check unique username
-        $checkQuery = "SELECT id FROM mobile_users WHERE username = :username AND id != :user_id";
+        // Check unique username (case-insensitive)
+        $checkQuery = "SELECT id FROM mobile_users WHERE LOWER(username) = LOWER(:username) AND id != :user_id";
         $checkStmt = $conn->prepare($checkQuery);
         $checkStmt->bindParam(':username', $username);
         $checkStmt->bindParam(':user_id', $user_id);
         $checkStmt->execute();
         if($checkStmt->rowCount() > 0){
             http_response_code(200);
-            echo json_encode(array("success" => false, "message" => "Username is already taken."));
+            echo json_encode(array("success" => false, "message" => "Username is already taken. Please choose another."));
             exit();
         }
         $updates[] = "username = :username";

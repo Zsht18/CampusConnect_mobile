@@ -63,28 +63,23 @@ public class ProfileActivity extends AppCompatActivity {
 
         String createdAtStr = prefs.getString("USER_CREATED_AT", "");
         if (createdAtStr != null && !createdAtStr.isEmpty() && accountAgeText != null) {
+            java.util.Date createdAtDate = null;
             try {
                 java.text.SimpleDateFormat inputFormat = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
-                java.util.Date createdAtDate = inputFormat.parse(createdAtStr);
-                if (createdAtDate != null) {
-                    java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
-                    accountAgeText.setText(outputFormat.format(createdAtDate));
-                } else {
-                    accountAgeText.setText(createdAtStr);
-                }
+                createdAtDate = inputFormat.parse(createdAtStr);
             } catch (Exception e) {
                 try {
                     java.text.SimpleDateFormat inputFormatDateOnly = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault());
-                    java.util.Date createdAtDate = inputFormatDateOnly.parse(createdAtStr);
-                    if (createdAtDate != null) {
-                        java.text.SimpleDateFormat outputFormat = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
-                        accountAgeText.setText(outputFormat.format(createdAtDate));
-                    } else {
-                        accountAgeText.setText(createdAtStr);
-                    }
+                    createdAtDate = inputFormatDateOnly.parse(createdAtStr);
                 } catch (Exception ex) {
-                    accountAgeText.setText(createdAtStr);
+                    // Ignore
                 }
+            }
+
+            if (createdAtDate != null) {
+                accountAgeText.setText(calculateAccountAge(createdAtDate));
+            } else {
+                accountAgeText.setText("1 Day");
             }
         }
 
@@ -202,19 +197,19 @@ public class ProfileActivity extends AppCompatActivity {
                 }
 
                 if (approvals != null) {
-                    approvals.setText("👍 " + post.getApprovals() + " Approvals");
+                    approvals.setText("👍 " + post.getApprovals() + " Likes");
                     final boolean[] isApproved = {false};
                     final int[] currentApprovals = {post.getApprovals()};
                     approvals.setOnClickListener(v -> {
                         if (!isApproved[0]) {
                             isApproved[0] = true;
                             currentApprovals[0]++;
-                            approvals.setText("👍 " + currentApprovals[0] + " Approvals");
+                            approvals.setText("👍 " + currentApprovals[0] + " Likes");
                             Toast.makeText(this, "Post approved!", Toast.LENGTH_SHORT).show();
                         } else {
                             isApproved[0] = false;
                             currentApprovals[0]--;
-                            approvals.setText("👍 " + currentApprovals[0] + " Approvals");
+                            approvals.setText("👍 " + currentApprovals[0] + " Likes");
                             Toast.makeText(this, "Approval removed", Toast.LENGTH_SHORT).show();
                         }
                     });
@@ -575,6 +570,31 @@ public class ProfileActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "Please select a valid image (.jpg, .png, .jpeg, .heif)", Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    private String calculateAccountAge(java.util.Date createdDate) {
+        if (createdDate == null) return "1 Day";
+
+        long now = System.currentTimeMillis();
+        long diffInMillis = Math.max(0, now - createdDate.getTime());
+        long diffInDays = diffInMillis / (1000L * 60 * 60 * 24);
+
+        if (diffInDays < 1) {
+            long diffInHours = diffInMillis / (1000L * 60 * 60);
+            if (diffInHours <= 1) return "1 Hour";
+            return diffInHours + " Hours";
+        } else if (diffInDays < 30) {
+            if (diffInDays == 1) return "1 Day";
+            return diffInDays + " Days";
+        } else if (diffInDays < 365) {
+            long months = diffInDays / 30;
+            if (months <= 1) return "1 Month";
+            return months + " Months";
+        } else {
+            long years = diffInDays / 365;
+            if (years <= 1) return "1 Year";
+            return years + " Years";
         }
     }
 

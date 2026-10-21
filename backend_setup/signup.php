@@ -6,19 +6,42 @@ header("Access-Control-Allow-Methods: POST");
 
 include_once 'db_connect.php';
 
-$email = isset($_POST['email']) ? $_POST['email'] : '';
-$id_number = isset($_POST['id_number']) ? $_POST['id_number'] : '';
-$full_name = isset($_POST['full_name']) ? $_POST['full_name'] : '';
-$username = isset($_POST['username']) ? $_POST['username'] : '';
-$password = isset($_POST['password']) ? $_POST['password'] : '';
+$email = isset($_POST['email']) ? trim($_POST['email']) : '';
+$id_number = isset($_POST['id_number']) ? trim($_POST['id_number']) : '';
+$full_name = isset($_POST['full_name']) ? trim($_POST['full_name']) : '';
+$username = isset($_POST['username']) ? trim($_POST['username']) : '';
+$password = isset($_POST['password']) ? trim($_POST['password']) : '';
 
 if(!empty($email) && !empty($id_number) && !empty($full_name) && !empty($username) && !empty($password)){
+
+    // Check if email, id_number, or username already exists (case-insensitive)
+    $checkQuery = "SELECT id, institutional_email, id_number, username FROM mobile_users WHERE LOWER(institutional_email) = LOWER(:email) OR id_number = :id_number OR LOWER(username) = LOWER(:username) LIMIT 1";
+    $checkStmt = $conn->prepare($checkQuery);
+    $checkStmt->bindParam(':email', $email);
+    $checkStmt->bindParam(':id_number', $id_number);
+    $checkStmt->bindParam(':username', $username);
+    $checkStmt->execute();
+
+    if($checkStmt->rowCount() > 0){
+        $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+        $errorMsg = "Account already exists.";
+        if(strcasecmp($existing['institutional_email'], $email) === 0) {
+            $errorMsg = "Email is already registered.";
+        } else if($existing['id_number'] === $id_number) {
+            $errorMsg = "ID Number is already registered.";
+        } else if(strcasecmp($existing['username'], $username) === 0) {
+            $errorMsg = "Username is already taken. Please choose another.";
+        }
+
+        http_response_code(200);
+        echo json_encode(array("success" => false, "message" => $errorMsg));
+        exit();
+    }
 
     // Hash the password for security
     $password_hash = password_hash($password, PASSWORD_BCRYPT);
 
     $query = "INSERT INTO mobile_users SET institutional_email=:email, id_number=:id_number, full_name=:full_name, username=:username, password_hash=:password_hash";
-
     $stmt = $conn->prepare($query);
 
     $stmt->bindParam(":email", $email);
@@ -27,21 +50,15 @@ if(!empty($email) && !empty($id_number) && !empty($full_name) && !empty($usernam
     $stmt->bindParam(":username", $username);
     $stmt->bindParam(":password_hash", $password_hash);
 
-    try {
-        if($stmt->execute()){
-            http_response_code(201);
-            echo json_encode(array("success" => true, "message" => "User was created."));
-        } else {
-            http_response_code(503);
-            echo json_encode(array("success" => false, "message" => "Unable to create user."));
-        }
-    } catch(PDOException $e) {
-        // Catch duplicate email/username errors
-        http_response_code(400);
-        echo json_encode(array("success" => false, "message" => "Error: User with this email, ID, or username already exists."));
+    if($stmt->execute()){
+        http_response_code(200);
+        echo json_encode(array("success" => true, "message" => "Account created successfully."));
+    } else {
+        http_response_code(200);
+        echo json_encode(array("success" => false, "message" => "Unable to create account."));
     }
 } else {
-    http_response_code(400);
+    http_response_code(200);
     echo json_encode(array("success" => false, "message" => "Incomplete data. Please fill all fields."));
 }
 ?>

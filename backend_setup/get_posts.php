@@ -12,6 +12,8 @@ $search = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 $query = "SELECT p.id, p.user_id, p.title, p.category, p.content, p.file_url, p.is_anonymous, p.approvals, p.shares, p.created_at,
           IF(p.is_anonymous = 1, CONCAT(IFNULL(SUBSTRING(u.username, 1, 1), 'A'), '.....'), u.username) as author_name,
+          u.username as owner_username,
+          IF(p.is_anonymous = 1, NULL, u.profile_pic_url) as profile_pic_url,
           (SELECT COUNT(*) FROM mobile_comments WHERE post_id = p.id) as comments_count
           FROM mobile_posts p
           LEFT JOIN mobile_users u ON p.user_id = u.id ";

@@ -58,6 +58,13 @@ public class LoginActivity extends AppCompatActivity {
                                 try {
                                     int userId = Integer.parseInt(response.body().getUser().getId());
                                     editor.putInt("USER_ID", userId);
+                                    String profilePicUrl = response.body().getUser().getProfilePicUrl();
+                                    if (profilePicUrl != null && !profilePicUrl.isEmpty()) {
+                                        editor.putString("USER_PROFILE_PIC_URI_" + userId, profilePicUrl);
+                                    } else {
+                                        editor.remove("USER_PROFILE_PIC_URI_" + userId);
+                                    }
+                                    editor.remove("USER_PROFILE_PIC_URL");
                                 } catch (Exception e) {
                                     editor.putInt("USER_ID", 1);
                                 }

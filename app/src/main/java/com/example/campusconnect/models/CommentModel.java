@@ -24,6 +24,9 @@ public class CommentModel {
     @SerializedName("author_name")
     private String authorName;
 
+    @SerializedName("profile_pic_url")
+    private String profilePicUrl;
+
     public int getId() { return id; }
     public int getPostId() { return postId; }
     public int getUserId() { return userId; }
@@ -31,4 +34,5 @@ public class CommentModel {
     public int getLikes() { return likes; }
     public String getCreatedAt() { return createdAt; }
     public String getAuthorName() { return authorName; }
+    public String getProfilePicUrl() { return profilePicUrl; }
 }

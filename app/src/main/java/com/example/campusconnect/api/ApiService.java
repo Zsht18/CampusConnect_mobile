@@ -5,7 +5,11 @@ import com.example.campusconnect.models.LoginResponse;
 import retrofit2.Call;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.Multipart;
+import retrofit2.http.Part;
 import retrofit2.http.POST;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 
 public interface ApiService {
 
@@ -26,14 +30,15 @@ public interface ApiService {
             @Field("password") String password
     );
 
-    @FormUrlEncoded
+    @Multipart
     @POST("create_post.php")
     Call<com.example.campusconnect.models.GenericResponse> createPost(
-            @Field("user_id") int userId,
-            @Field("title") String title,
-            @Field("category") String category,
-            @Field("content") String content,
-            @Field("is_anonymous") int isAnonymous
+            @Part("user_id") RequestBody userId,
+            @Part("title") RequestBody title,
+            @Part("category") RequestBody category,
+            @Part("content") RequestBody content,
+            @Part("is_anonymous") RequestBody isAnonymous,
+            @Part MultipartBody.Part file
     );
 
     @retrofit2.http.GET("get_posts.php")
@@ -88,5 +93,21 @@ public interface ApiService {
             @Field("category") String category,
             @Field("content") String content,
             @Field("is_anonymous") int isAnonymous
+    );
+
+    @FormUrlEncoded
+    @POST("update_profile.php")
+    Call<com.example.campusconnect.models.GenericResponse> updateProfile(
+            @Field("user_id") int userId,
+            @Field("username") String username,
+            @Field("old_password") String oldPassword,
+            @Field("new_password") String newPassword
+    );
+
+    @FormUrlEncoded
+    @POST("upload_profile_pic.php")
+    Call<com.example.campusconnect.models.GenericResponse> uploadProfilePic(
+            @Field("user_id") int userId,
+            @Field("image") String base64Image
     );
 }

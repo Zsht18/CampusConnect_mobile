@@ -15,7 +15,15 @@
         app:cardCornerRadius="16dp"
         app:cardElevation="0dp">
 
+        <ImageView
+            android:id="@+id/commentAvatarImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+
         <TextView
+            android:id="@+id/commentAvatarText"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"

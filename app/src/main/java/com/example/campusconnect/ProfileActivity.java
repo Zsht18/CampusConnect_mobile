@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,9 +35,15 @@ public class ProfileActivity extends AppCompatActivity {
         TextView profileHandleText = findViewById(R.id.profileHandleText);
         TextView accountAgeText = findViewById(R.id.accountAgeText);
         TextView postsCountText = findViewById(R.id.postsCountText);
-        
+
         // Retrieve the data saved from the LoginActivity
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        int userId = prefs.getInt("USER_ID", 1);
+
+        // Load saved profile picture if present
+        String picUriStr = prefs.getString("USER_PROFILE_PIC_URI_" + userId, "");
+        AvatarHelper.loadAvatar(this, picUriStr, findViewById(R.id.profileAvatarImage), findViewById(R.id.profileAvatarText));
+
         String fullName = prefs.getString("USER_FULL_NAME", "");
         if (fullName != null && !fullName.isEmpty() && profileUsernameText != null) {
             profileUsernameText.setText(fullName);
@@ -81,27 +88,29 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
 
+        // Setup Edit Profile button
+        TextView btnEditProfile = findViewById(R.id.btnEditProfile);
+        if (btnEditProfile != null) {
+            btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
+        }
+
+        View savedPostsButton = findViewById(R.id.savedPostsButton);
+        if (savedPostsButton != null) {
+            savedPostsButton.setOnClickListener(v ->
+                    startActivity(new Intent(ProfileActivity.this, SavedPostsActivity.class)));
+        }
+
         // Setup Log Out button
         androidx.appcompat.widget.AppCompatButton logoutButton = findViewById(R.id.logoutButton);
         if (logoutButton != null) {
-            logoutButton.setOnClickListener(v -> {
-                // Clear saved SharedPreferences
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.clear();
-                editor.apply();
-
-                // Redirect to LoginActivity and clear activity stack
-                Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            });
+            logoutButton.setOnClickListener(v -> showLogoutConfirmationDialog(prefs));
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        AvatarHelper.loadHeaderAvatar(this);
         fetchUserPosts();
     }
 
@@ -116,6 +125,8 @@ public class ProfileActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<PostModel>> call, Response<List<PostModel>> response) {
                 if (response.isSuccessful() && response.body() != null) {
+                    // Keep the profile handle from the logged-in account, including when
+                    // the first returned post is anonymous.
                     populateProfilePosts(response.body());
                 }
             }
@@ -147,14 +158,39 @@ public class ProfileActivity extends AppCompatActivity {
                 TextView approvals = postView.findViewById(R.id.postApprovals);
                 TextView dislikes = postView.findViewById(R.id.postDislikes);
                 TextView commentsCount = postView.findViewById(R.id.postCommentsCount);
+                TextView saveButton = postView.findViewById(R.id.postSaveButton);
                 TextView optionsBtn = postView.findViewById(R.id.postOptionsBtn);
+                android.widget.ImageView postAvatarImg = postView.findViewById(R.id.postAvatarImage);
+                TextView postAvatarTxt = postView.findViewById(R.id.postAvatarText);
+
+                java.io.File userLocalFile = new java.io.File(getFilesDir(), "profile_user_" + post.getUserId() + ".jpg");
+
+                String avatarTarget = "";
+                if (post.getIsAnonymous() == 0 && post.getProfilePicUrl() != null && !post.getProfilePicUrl().isEmpty()) {
+                    avatarTarget = post.getProfilePicUrl();
+                } else if (post.getIsAnonymous() == 0 && userLocalFile.exists()) {
+                    avatarTarget = "file://" + userLocalFile.getAbsolutePath();
+                }
+
+                AvatarHelper.loadAvatar(this, avatarTarget, postAvatarImg, postAvatarTxt);
+
+                TextView attachment = postView.findViewById(R.id.postAttachment);
+                bindAttachment(attachment, post.getFileUrl());
+                View imagePlaceholder = postView.findViewById(R.id.postImagePlaceholder);
+                if (imagePlaceholder != null) {
+                    imagePlaceholder.setVisibility(isImageAttachment(post.getFileUrl()) ? View.VISIBLE : View.GONE);
+                    if (isImageAttachment(post.getFileUrl())) {
+                        PostAttachmentHelper.loadImage(this, post.getFileUrl(),
+                                (android.widget.ImageView) imagePlaceholder);
+                    }
+                }
 
                 if (optionsBtn != null) {
                     optionsBtn.setTag(post);
                 }
 
                 if (author != null) {
-                    author.setText(post.getAuthorName() != null && !post.getAuthorName().isEmpty() ? post.getAuthorName() : "Student");
+                    author.setText(getDisplayedAuthor(post));
                 }
                 if (content != null) {
                     String fullText = post.getTitle() != null ? post.getTitle() : "";
@@ -209,13 +245,36 @@ public class ProfileActivity extends AppCompatActivity {
                         Intent intent = new Intent(ProfileActivity.this, PostDetailsActivity.class);
                         intent.putExtra("POST_ID", post.getId());
                         intent.putExtra("POST_USER_ID", post.getUserId());
-                        intent.putExtra("POST_AUTHOR", post.getAuthorName() != null && !post.getAuthorName().isEmpty() ? post.getAuthorName() : "Student");
+                        intent.putExtra("POST_AUTHOR", getDisplayedAuthor(post));
+                        intent.putExtra("POST_IS_ANONYMOUS", post.getIsAnonymous());
                         intent.putExtra("POST_TITLE", post.getTitle() != null ? post.getTitle() : "");
                         intent.putExtra("POST_CONTENT", post.getContent() != null ? post.getContent() : "");
                         intent.putExtra("POST_DATE", post.getCreatedAt() != null ? post.getCreatedAt() : "");
                         intent.putExtra("POST_APPROVALS", post.getApprovals());
                         intent.putExtra("POST_SHARES", post.getShares());
+                        intent.putExtra("POST_FILE_URL", post.getFileUrl());
                         startActivity(intent);
+                    });
+                }
+                if (saveButton != null) {
+                    int savedUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                            .getInt("USER_ID", 1);
+                    if (SavedPostsStore.contains(this, post.getId(), savedUserId)) {
+                        saveButton.setText("🔖 Saved");
+                    }
+                    saveButton.setOnClickListener(v -> {
+                        int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                                .getInt("USER_ID", 1);
+                        boolean saved = SavedPostsStore.contains(this, post.getId(), currentUserId);
+                        if (saved) {
+                            SavedPostsStore.remove(this, post.getId(), currentUserId);
+                            saveButton.setText("🔖 Save");
+                            Toast.makeText(this, "Post unsaved.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            SavedPostsStore.add(this, post, currentUserId);
+                            saveButton.setText("🔖 Saved");
+                            Toast.makeText(this, "Post saved.", Toast.LENGTH_SHORT).show();
+                        }
                     });
                 }
 
@@ -223,17 +282,85 @@ public class ProfileActivity extends AppCompatActivity {
                     Intent intent = new Intent(ProfileActivity.this, PostDetailsActivity.class);
                     intent.putExtra("POST_ID", post.getId());
                     intent.putExtra("POST_USER_ID", post.getUserId());
-                    intent.putExtra("POST_AUTHOR", post.getAuthorName() != null && !post.getAuthorName().isEmpty() ? post.getAuthorName() : "Student");
+                    intent.putExtra("POST_AUTHOR", getDisplayedAuthor(post));
+                    intent.putExtra("POST_IS_ANONYMOUS", post.getIsAnonymous());
                     intent.putExtra("POST_TITLE", post.getTitle() != null ? post.getTitle() : "");
                     intent.putExtra("POST_CONTENT", post.getContent() != null ? post.getContent() : "");
                     intent.putExtra("POST_DATE", post.getCreatedAt() != null ? post.getCreatedAt() : "");
                     intent.putExtra("POST_APPROVALS", post.getApprovals());
                     intent.putExtra("POST_SHARES", post.getShares());
+                    intent.putExtra("POST_FILE_URL", post.getFileUrl());
                     startActivity(intent);
                 });
 
                 container.addView(postView);
             }
+        }
+
+    }
+
+    private void bindAttachment(TextView attachment, String fileUrl) {
+        if (attachment == null || fileUrl == null || fileUrl.isEmpty()) return;
+        String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+        attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
+        attachment.setVisibility(View.VISIBLE);
+        attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
+    }
+
+    private boolean isImageAttachment(String fileUrl) {
+        if (fileUrl == null) return false;
+        String path = fileUrl.toLowerCase(java.util.Locale.US);
+        int queryIndex = path.indexOf('?');
+        if (queryIndex >= 0) path = path.substring(0, queryIndex);
+        return path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png");
+    }
+
+    private String getDisplayedAuthor(PostModel post) {
+        return post.getAuthorName() != null && !post.getAuthorName().isEmpty()
+                ? post.getAuthorName() : "Student";
+    }
+
+    private void showAttachmentOptions(String fileUrl, String fileName) {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_attachment_options, null);
+        dialogView.findViewById(R.id.optionViewAttachment).setOnClickListener(v -> {
+            dialog.dismiss();
+            viewAttachment(fileUrl);
+        });
+        dialogView.findViewById(R.id.optionDownloadAttachment).setOnClickListener(v -> {
+            dialog.dismiss();
+            downloadAttachment(fileUrl, fileName);
+        });
+        dialog.setContentView(dialogView);
+        dialog.show();
+    }
+
+    private void viewAttachment(String fileUrl) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fileUrl)));
+        } catch (Exception e) {
+            Toast.makeText(this, "No app can open this attachment.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void downloadAttachment(String fileUrl, String fileName) {
+        try {
+            android.app.DownloadManager.Request request =
+                    new android.app.DownloadManager.Request(android.net.Uri.parse(fileUrl));
+            request.setTitle(fileName);
+            request.setDescription("Downloading attachment");
+            request.setNotificationVisibility(
+                    android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(
+                    android.os.Environment.DIRECTORY_DOWNLOADS, fileName);
+            android.app.DownloadManager manager =
+                    (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            if (manager != null) {
+                manager.enqueue(request);
+                Toast.makeText(this, "Download started.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Unable to download attachment.", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -324,5 +451,308 @@ public class ProfileActivity extends AppCompatActivity {
                 Toast.makeText(ProfileActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
             }
         });
+    }
+
+    private void showEditProfileDialog() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_edit_profile_options, null);
+
+        View optionUsername = dialogView.findViewById(R.id.optionChangeUsername);
+        View optionPassword = dialogView.findViewById(R.id.optionChangePassword);
+        View optionPicture = dialogView.findViewById(R.id.optionChangePicture);
+
+        if (optionUsername != null) {
+            optionUsername.setOnClickListener(v -> {
+                dialog.dismiss();
+                showChangeUsernameDialog();
+            });
+        }
+
+        if (optionPassword != null) {
+            optionPassword.setOnClickListener(v -> {
+                dialog.dismiss();
+                showChangePasswordDialog();
+            });
+        }
+
+        if (optionPicture != null) {
+            optionPicture.setOnClickListener(v -> {
+                dialog.dismiss();
+                openImagePicker();
+            });
+        }
+
+        dialog.setContentView(dialogView);
+        dialog.show();
+    }
+
+    private static final int PICK_IMAGE_REQUEST = 101;
+
+    private void openImagePicker() {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        String[] mimetypes = {"image/jpeg", "image/png", "image/jpg", "image/heif"};
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, mimetypes);
+        startActivityForResult(Intent.createChooser(intent, "Select Profile Picture"), PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            android.net.Uri uri = data.getData();
+            String path = uri.toString();
+            String mimeType = getContentResolver().getType(uri);
+
+            boolean isValid = false;
+            if (path.toLowerCase().matches(".*\\.(jpg|jpeg|png|heif)$")) {
+                isValid = true;
+            } else if (mimeType != null && (mimeType.contains("jpeg") || mimeType.contains("png") || mimeType.contains("jpg") || mimeType.contains("heif"))) {
+                isValid = true;
+            }
+
+            if (isValid) {
+                SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                int userId = prefs.getInt("USER_ID", 1);
+                String localSavedPath = uri.toString();
+
+                try {
+                    java.io.InputStream inputStream = getContentResolver().openInputStream(uri);
+                    java.io.File localFile = new java.io.File(getFilesDir(), "profile_user_" + userId + ".jpg");
+                    java.io.FileOutputStream outputStream = new java.io.FileOutputStream(localFile);
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                    outputStream.close();
+                    inputStream.close();
+                    localSavedPath = "file://" + localFile.getAbsolutePath();
+                } catch (Exception e) {
+                    try {
+                        getContentResolver().takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    } catch (Exception ex) {
+                        // ignore
+                    }
+                }
+
+                prefs.edit().putString("USER_PROFILE_PIC_URI_" + userId, localSavedPath).apply();
+
+                android.widget.ImageView avatarImg = findViewById(R.id.profileAvatarImage);
+                TextView avatarTxt = findViewById(R.id.profileAvatarText);
+                AvatarHelper.loadAvatar(this, localSavedPath, avatarImg, avatarTxt);
+
+                new Thread(() -> {
+                    try {
+                        android.graphics.Bitmap bitmap = android.provider.MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                        android.graphics.Bitmap scaled = android.graphics.Bitmap.createScaledBitmap(bitmap, 300, 300, true);
+                        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                        scaled.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos);
+                        byte[] imageBytes = baos.toByteArray();
+                        String base64Image = android.util.Base64.encodeToString(imageBytes, android.util.Base64.DEFAULT);
+
+                        ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                        Call<GenericResponse> call = apiService.uploadProfilePic(userId, base64Image);
+                        call.enqueue(new Callback<GenericResponse>() {
+                            @Override
+                            public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
+                                if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                                    runOnUiThread(() -> Toast.makeText(ProfileActivity.this, "Profile picture saved to server!", Toast.LENGTH_SHORT).show());
+                                }
+                            }
+
+                            @Override
+                            public void onFailure(Call<GenericResponse> call, Throwable t) {
+                                // Ignore network error
+                            }
+                        });
+                    } catch (Exception e) {
+                        // Ignore image compression error
+                    }
+                }).start();
+
+                Toast.makeText(this, "Profile picture updated successfully!", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Please select a valid image (.jpg, .png, .jpeg, .heif)", Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void showChangeUsernameDialog() {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        int userId = prefs.getInt("USER_ID", 1);
+        String currentUsername = prefs.getString("USER_USERNAME", "");
+
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.setContentView(R.layout.dialog_change_username);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        EditText input = dialog.findViewById(R.id.dialogUsernameInput);
+        if (input != null && currentUsername != null && !currentUsername.isEmpty()) {
+            input.setText(currentUsername);
+            input.setSelection(currentUsername.length());
+        }
+
+        View btnCancel = dialog.findViewById(R.id.btnCancelUsername);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        View btnSave = dialog.findViewById(R.id.btnSaveUsername);
+        if (btnSave != null && input != null) {
+            btnSave.setOnClickListener(v -> {
+                String newUsername = input.getText().toString().trim();
+                if (newUsername.isEmpty()) {
+                    Toast.makeText(this, "Username cannot be empty.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<GenericResponse> call = apiService.updateProfile(userId, newUsername, null, null);
+                call.enqueue(new Callback<GenericResponse>() {
+                    @Override
+                    public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            dialog.dismiss();
+                            Toast.makeText(ProfileActivity.this, "Username updated successfully!", Toast.LENGTH_SHORT).show();
+                            prefs.edit().putString("USER_USERNAME", newUsername).apply();
+                            TextView profileHandleText = findViewById(R.id.profileHandleText);
+                            if (profileHandleText != null) {
+                                profileHandleText.setText(newUsername.startsWith("@") ? newUsername : "@" + newUsername);
+                            }
+                            fetchUserPosts();
+                        } else {
+                            String msg = (response.body() != null) ? response.body().getMessage() : "Failed to update username.";
+                            Toast.makeText(ProfileActivity.this, msg, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<GenericResponse> call, Throwable t) {
+                        Toast.makeText(ProfileActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void showChangePasswordDialog() {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        int userId = prefs.getInt("USER_ID", 1);
+
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.setContentView(R.layout.dialog_change_password);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        EditText oldInput = dialog.findViewById(R.id.dialogOldPasswordInput);
+        EditText newInput = dialog.findViewById(R.id.dialogNewPasswordInput);
+        EditText confirmInput = dialog.findViewById(R.id.dialogConfirmPasswordInput);
+        android.widget.CheckBox chkShowPassword = dialog.findViewById(R.id.chkShowPassword);
+
+        if (chkShowPassword != null) {
+            chkShowPassword.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                int inputType = isChecked ?
+                    (android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD) :
+                    (android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+                if (oldInput != null) {
+                    oldInput.setInputType(inputType);
+                    oldInput.setSelection(oldInput.getText().length());
+                }
+                if (newInput != null) {
+                    newInput.setInputType(inputType);
+                    newInput.setSelection(newInput.getText().length());
+                }
+                if (confirmInput != null) {
+                    confirmInput.setInputType(inputType);
+                    confirmInput.setSelection(confirmInput.getText().length());
+                }
+            });
+        }
+
+        View btnCancel = dialog.findViewById(R.id.btnCancelPassword);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        View btnSave = dialog.findViewById(R.id.btnSavePassword);
+        if (btnSave != null && oldInput != null && newInput != null && confirmInput != null) {
+            btnSave.setOnClickListener(v -> {
+                String oldPass = oldInput.getText().toString().trim();
+                String newPass = newInput.getText().toString().trim();
+                String confirmPass = confirmInput.getText().toString().trim();
+
+                if (oldPass.isEmpty()) {
+                    Toast.makeText(this, "Please enter your current password.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (newPass.isEmpty()) {
+                    Toast.makeText(this, "Please enter a new password.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                if (!newPass.equals(confirmPass)) {
+                    Toast.makeText(this, "New passwords do not match.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<GenericResponse> call = apiService.updateProfile(userId, null, oldPass, newPass);
+                call.enqueue(new Callback<GenericResponse>() {
+                    @Override
+                    public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            dialog.dismiss();
+                            Toast.makeText(ProfileActivity.this, "Password updated successfully!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            String msg = (response.body() != null) ? response.body().getMessage() : "Failed to update password.";
+                            Toast.makeText(ProfileActivity.this, msg, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<GenericResponse> call, Throwable t) {
+                        Toast.makeText(ProfileActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void showLogoutConfirmationDialog(SharedPreferences prefs) {
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.setContentView(R.layout.dialog_logout_confirmation);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        View btnCancel = dialog.findViewById(R.id.btnCancelLogout);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        View btnConfirm = dialog.findViewById(R.id.btnConfirmLogout);
+        if (btnConfirm != null) {
+            btnConfirm.setOnClickListener(v -> {
+                dialog.dismiss();
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.clear();
+                editor.apply();
+
+                Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            });
+        }
+
+        dialog.show();
     }
 }

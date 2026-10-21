@@ -9,7 +9,8 @@ include_once 'db_connect.php';
 $post_id = isset($_GET['post_id']) ? intval($_GET['post_id']) : 0;
 
 if($post_id > 0){
-    $query = "SELECT c.id, c.post_id, c.user_id, c.content, c.likes, c.created_at, u.username as author_name
+    $query = "SELECT c.id, c.post_id, c.user_id, c.content, c.likes, c.created_at, u.username as author_name,
+                     u.profile_pic_url
               FROM mobile_comments c
               LEFT JOIN mobile_users u ON c.user_id = u.id
               WHERE c.post_id = :post_id

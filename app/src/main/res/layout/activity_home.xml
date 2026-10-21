@@ -77,13 +77,22 @@
                         app:cardBackgroundColor="#E6E6FA"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="0dp">
-                        <TextView
+
+                        <ImageView
+                            android:id="@+id/headerAvatarImage"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:text="👤"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone" />
+
+                        <TextView
+                            android:id="@+id/headerAvatarText"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
                             android:gravity="center"
-                            android:textSize="18sp"
-                            android:textColor="#8A2BE2"/>
+                            android:text="👤"
+                            android:textColor="#8A2BE2"
+                            android:textSize="18sp" />
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
 

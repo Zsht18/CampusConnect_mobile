@@ -1,6 +1,7 @@
 package com.example.campusconnect;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.Editable;
@@ -117,6 +118,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        AvatarHelper.loadHeaderAvatar(this);
         EditText searchEditText = findViewById(R.id.searchEditText);
         String query = searchEditText != null ? searchEditText.getText().toString().trim() : null;
         fetchLivePosts(query);
@@ -237,14 +239,39 @@ public class HomeActivity extends AppCompatActivity {
                         TextView content = postView.findViewById(R.id.postContentText);
                         TextView approvals = postView.findViewById(R.id.postApprovals);
                         TextView commentsCount = postView.findViewById(R.id.postCommentsCount);
+                        TextView saveButton = postView.findViewById(R.id.postSaveButton);
                         TextView optionsBtn = postView.findViewById(R.id.postOptionsBtn);
+                        android.widget.ImageView postAvatarImg = postView.findViewById(R.id.postAvatarImage);
+                        TextView postAvatarTxt = postView.findViewById(R.id.postAvatarText);
+
+                        java.io.File userLocalFile = new java.io.File(getFilesDir(), "profile_user_" + post.getUserId() + ".jpg");
+
+                        String avatarTarget = "";
+                        if (post.getIsAnonymous() == 0 && post.getProfilePicUrl() != null && !post.getProfilePicUrl().isEmpty()) {
+                            avatarTarget = post.getProfilePicUrl();
+                        } else if (post.getIsAnonymous() == 0 && userLocalFile.exists()) {
+                            avatarTarget = "file://" + userLocalFile.getAbsolutePath();
+                        }
+
+                        AvatarHelper.loadAvatar(this, avatarTarget, postAvatarImg, postAvatarTxt);
+
+                        TextView attachment = postView.findViewById(R.id.postAttachment);
+                        bindAttachment(attachment, post.getFileUrl());
+                        View imagePlaceholder = postView.findViewById(R.id.postImagePlaceholder);
+                        if (imagePlaceholder != null) {
+                            imagePlaceholder.setVisibility(isImageAttachment(post.getFileUrl()) ? View.VISIBLE : View.GONE);
+                            if (isImageAttachment(post.getFileUrl())) {
+                                PostAttachmentHelper.loadImage(this, post.getFileUrl(),
+                                        (android.widget.ImageView) imagePlaceholder);
+                            }
+                        }
 
                         if (optionsBtn != null) {
                             optionsBtn.setTag(post);
                         }
 
                         if (author != null) {
-                            author.setText(post.getAuthorName() != null && !post.getAuthorName().isEmpty() ? post.getAuthorName() : "Student");
+                            author.setText(getDisplayedAuthor(post));
                         }
                         if (content != null) {
                             String fullText = post.getTitle() != null ? post.getTitle() : "";
@@ -300,13 +327,36 @@ public class HomeActivity extends AppCompatActivity {
                                 Intent intent = new Intent(HomeActivity.this, PostDetailsActivity.class);
                                 intent.putExtra("POST_ID", post.getId());
                                 intent.putExtra("POST_USER_ID", post.getUserId());
-                                intent.putExtra("POST_AUTHOR", post.getAuthorName() != null && !post.getAuthorName().isEmpty() ? post.getAuthorName() : "Student");
+                                intent.putExtra("POST_AUTHOR", getDisplayedAuthor(post));
+                                intent.putExtra("POST_IS_ANONYMOUS", post.getIsAnonymous());
                                 intent.putExtra("POST_TITLE", post.getTitle() != null ? post.getTitle() : "");
                                 intent.putExtra("POST_CONTENT", post.getContent() != null ? post.getContent() : "");
                                 intent.putExtra("POST_DATE", post.getCreatedAt() != null ? post.getCreatedAt() : "");
                                 intent.putExtra("POST_APPROVALS", post.getApprovals());
                                 intent.putExtra("POST_SHARES", post.getShares());
+                                intent.putExtra("POST_FILE_URL", post.getFileUrl());
                                 startActivity(intent);
+                            });
+                        }
+                        if (saveButton != null) {
+                            int savedUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                                    .getInt("USER_ID", 1);
+                            if (SavedPostsStore.contains(this, post.getId(), savedUserId)) {
+                                saveButton.setText("🔖 Saved");
+                            }
+                            saveButton.setOnClickListener(v -> {
+                                int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                                        .getInt("USER_ID", 1);
+                                boolean saved = SavedPostsStore.contains(this, post.getId(), currentUserId);
+                                if (saved) {
+                                    SavedPostsStore.remove(this, post.getId(), currentUserId);
+                                    saveButton.setText("🔖 Save");
+                                    Toast.makeText(this, "Post unsaved.", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    SavedPostsStore.add(this, post, currentUserId);
+                                    saveButton.setText("🔖 Saved");
+                                    Toast.makeText(this, "Post saved.", Toast.LENGTH_SHORT).show();
+                                }
                             });
                         }
 
@@ -314,19 +364,88 @@ public class HomeActivity extends AppCompatActivity {
                             Intent intent = new Intent(HomeActivity.this, PostDetailsActivity.class);
                             intent.putExtra("POST_ID", post.getId());
                             intent.putExtra("POST_USER_ID", post.getUserId());
-                            intent.putExtra("POST_AUTHOR", post.getAuthorName() != null && !post.getAuthorName().isEmpty() ? post.getAuthorName() : "Student");
+                            intent.putExtra("POST_AUTHOR", getDisplayedAuthor(post));
+                            intent.putExtra("POST_IS_ANONYMOUS", post.getIsAnonymous());
                             intent.putExtra("POST_TITLE", post.getTitle() != null ? post.getTitle() : "");
                             intent.putExtra("POST_CONTENT", post.getContent() != null ? post.getContent() : "");
                             intent.putExtra("POST_DATE", post.getCreatedAt() != null ? post.getCreatedAt() : "");
                             intent.putExtra("POST_APPROVALS", post.getApprovals());
                             intent.putExtra("POST_SHARES", post.getShares());
+                            intent.putExtra("POST_FILE_URL", post.getFileUrl());
                             startActivity(intent);
                         });
 
                         container.addView(postView);
                     }
                 }
+
             }
+        }
+    }
+
+    private void bindAttachment(TextView attachment, String fileUrl) {
+        if (attachment == null || fileUrl == null || fileUrl.isEmpty()) return;
+        String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+        attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
+        attachment.setVisibility(View.VISIBLE);
+        attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
+    }
+
+    private boolean isImageAttachment(String fileUrl) {
+        if (fileUrl == null) return false;
+        String path = fileUrl.toLowerCase(java.util.Locale.US);
+        int queryIndex = path.indexOf('?');
+        if (queryIndex >= 0) path = path.substring(0, queryIndex);
+        return path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png");
+    }
+
+    private String getDisplayedAuthor(PostModel post) {
+        return post.getAuthorName() != null && !post.getAuthorName().isEmpty()
+                ? post.getAuthorName() : "Student";
+    }
+
+    private void showAttachmentOptions(String fileUrl, String fileName) {
+        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
+                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_attachment_options, null);
+        dialogView.findViewById(R.id.optionViewAttachment).setOnClickListener(v -> {
+            dialog.dismiss();
+            viewAttachment(fileUrl);
+        });
+        dialogView.findViewById(R.id.optionDownloadAttachment).setOnClickListener(v -> {
+            dialog.dismiss();
+            downloadAttachment(fileUrl, fileName);
+        });
+        dialog.setContentView(dialogView);
+        dialog.show();
+    }
+
+    private void viewAttachment(String fileUrl) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fileUrl)));
+        } catch (Exception e) {
+            Toast.makeText(this, "No app can open this attachment.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void downloadAttachment(String fileUrl, String fileName) {
+        try {
+            android.app.DownloadManager.Request request =
+                    new android.app.DownloadManager.Request(android.net.Uri.parse(fileUrl));
+            request.setTitle(fileName);
+            request.setDescription("Downloading attachment");
+            request.setNotificationVisibility(
+                    android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(
+                    android.os.Environment.DIRECTORY_DOWNLOADS, fileName);
+            android.app.DownloadManager manager =
+                    (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            if (manager != null) {
+                manager.enqueue(request);
+                Toast.makeText(this, "Download started.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Unable to download attachment.", Toast.LENGTH_SHORT).show();
         }
     }
 

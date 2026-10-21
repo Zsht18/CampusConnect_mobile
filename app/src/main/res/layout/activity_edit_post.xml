@@ -77,13 +77,22 @@
                         app:cardBackgroundColor="#E6E6FA"
                         app:cardCornerRadius="16dp"
                         app:cardElevation="0dp">
-                        <TextView
+                        <ImageView
+                            android:id="@+id/headerAvatarImage"
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
-                            android:text="👤"
+                            android:scaleType="centerCrop"
+                            android:visibility="gone"
+                            android:contentDescription="Avatar" />
+
+                        <TextView
+                            android:id="@+id/headerAvatarText"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
                             android:gravity="center"
-                            android:textSize="18sp"
-                            android:textColor="#8A2BE2"/>
+                            android:text="👤"
+                            android:textColor="#8A2BE2"
+                            android:textSize="18sp" />
                     </androidx.cardview.widget.CardView>
                 </LinearLayout>
 
@@ -213,6 +222,54 @@
                         android:textColorHint="#999999"
                         android:textSize="12sp"
                         android:inputType="textMultiLine" />
+                </LinearLayout>
+
+                <!-- Attach File Section -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="vertical"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Attach File / Resource"
+                        android:textColor="#000000"
+                        android:textStyle="bold"
+                        android:textSize="14sp" />
+
+                    <!-- Upload Box -->
+                    <LinearLayout
+                        android:id="@+id/uploadBoxContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="64dp"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/dashed_border_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/uploadBoxText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📎 + Add File or Resource"
+                            android:textColor="#666666"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/uploadBoxSubText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="PDF, DOC, JPG, PNG - Max 100 MB"
+                            android:textColor="#999999"
+                            android:textSize="10sp" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <!-- Posting Option Section -->

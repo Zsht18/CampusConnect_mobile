@@ -11,7 +11,7 @@ $password = isset($_POST['password']) ? $_POST['password'] : '';
 
 if(!empty($id_number) && !empty($password)){
     // Fetch user from database and count their posts
-    $query = "SELECT u.id, u.id_number, u.full_name, u.username, u.password_hash, u.created_at,
+    $query = "SELECT u.id, u.id_number, u.full_name, u.username, u.profile_pic_url, u.password_hash, u.created_at,
               (SELECT COUNT(*) FROM mobile_posts WHERE user_id = u.id) as posts_count
               FROM mobile_users u WHERE u.id_number = :id_number LIMIT 0,1";
     $stmt = $conn->prepare($query);
@@ -31,6 +31,7 @@ if(!empty($id_number) && !empty($password)){
                 "id_number" => $row['id_number'],
                 "full_name" => $row['full_name'],
                 "username" => $row['username'],
+                "profile_pic_url" => $row['profile_pic_url'],
                 "created_at" => $row['created_at'],
                 "posts_count" => (int)$row['posts_count']
             );

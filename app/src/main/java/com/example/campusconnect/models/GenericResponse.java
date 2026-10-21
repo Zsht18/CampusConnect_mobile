@@ -9,11 +9,18 @@ public class GenericResponse {
     @SerializedName("message")
     private String message;
 
+    @SerializedName("file_url")
+    private String fileUrl;
+
     public boolean isSuccess() {
         return success;
     }
 
     public String getMessage() {
         return message;
+    }
+
+    public String getFileUrl() {
+        return fileUrl;
     }
 }

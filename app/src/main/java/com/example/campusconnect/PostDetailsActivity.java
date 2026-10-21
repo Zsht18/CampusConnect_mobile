@@ -14,6 +14,7 @@ import com.example.campusconnect.api.ApiClient;
 import com.example.campusconnect.api.ApiService;
 import com.example.campusconnect.models.CommentModel;
 import com.example.campusconnect.models.GenericResponse;
+import com.example.campusconnect.models.PostModel;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.List;
@@ -43,6 +44,23 @@ public class PostDetailsActivity extends AppCompatActivity {
             });
         }
 
+        AvatarHelper.loadHeaderAvatar(this);
+
+        int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
+        int postIsAnonymous = getIntent().getIntExtra("POST_IS_ANONYMOUS", 0);
+
+        java.io.File userLocalFile = new java.io.File(getFilesDir(), "profile_user_" + postUserId + ".jpg");
+        String avatarTarget = "";
+        if (postIsAnonymous == 0 && userLocalFile.exists()) {
+            avatarTarget = "file://" + userLocalFile.getAbsolutePath();
+        } else if (postIsAnonymous == 0) {
+            avatarTarget = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("USER_PROFILE_PIC_URI_" + postUserId, "");
+        }
+        AvatarHelper.loadAvatar(this, avatarTarget, findViewById(R.id.detailAvatarImage), findViewById(R.id.detailAvatarText));
+
+        String myPicUri = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("USER_PROFILE_PIC_URI_" + currentUserId, "");
+        AvatarHelper.loadAvatar(this, myPicUri, findViewById(R.id.commentBoxAvatarImage), findViewById(R.id.commentBoxAvatarText));
+
         // Retrieve post details from Intent
         String author = getIntent().getStringExtra("POST_AUTHOR");
         String title = getIntent().getStringExtra("POST_TITLE");
@@ -50,6 +68,7 @@ public class PostDetailsActivity extends AppCompatActivity {
         String date = getIntent().getStringExtra("POST_DATE");
         int approvals = getIntent().getIntExtra("POST_APPROVALS", 67);
         int shares = getIntent().getIntExtra("POST_SHARES", 69);
+        String fileUrl = getIntent().getStringExtra("POST_FILE_URL");
 
         TextView authorNameText = findViewById(R.id.detailAuthorName);
         TextView timestampText = findViewById(R.id.detailTimestamp);
@@ -62,6 +81,49 @@ public class PostDetailsActivity extends AppCompatActivity {
         if (timestampText != null && date != null && !date.isEmpty()) timestampText.setText(date);
         if (titleText != null && title != null && !title.isEmpty()) titleText.setText(title);
         if (contentText != null && content != null && !content.isEmpty()) contentText.setText(content);
+        TextView savePostButton = findViewById(R.id.savePostButton);
+        if (savePostButton != null) {
+            if (SavedPostsStore.contains(this, postId, currentUserId)) {
+                savePostButton.setText("🔖 Saved");
+            }
+            savePostButton.setOnClickListener(v -> {
+                if (SavedPostsStore.contains(this, postId, currentUserId)) {
+                    SavedPostsStore.remove(this, postId, currentUserId);
+                    savePostButton.setText("🔖 Save");
+                    Toast.makeText(this, "Post unsaved.", Toast.LENGTH_SHORT).show();
+                } else {
+                    PostModel post = new PostModel();
+                    post.setId(postId);
+                    post.setUserId(postUserId);
+                    post.setTitle(title);
+                    post.setContent(content);
+                    post.setCreatedAt(date);
+                    post.setApprovals(approvals);
+                    post.setShares(shares);
+                    post.setIsAnonymous(postIsAnonymous);
+                    post.setAuthorName(author);
+                    post.setFileUrl(fileUrl);
+                    SavedPostsStore.add(this, post, currentUserId);
+                    savePostButton.setText("🔖 Saved");
+                    Toast.makeText(this, "Post saved.", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
+        TextView attachment = findViewById(R.id.detailAttachment);
+        View imagePlaceholder = findViewById(R.id.detailImageContainer);
+        if (imagePlaceholder != null) {
+            imagePlaceholder.setVisibility(isImageAttachment(fileUrl) ? View.VISIBLE : View.GONE);
+            if (isImageAttachment(fileUrl)) {
+                PostAttachmentHelper.loadImage(this, fileUrl,
+                        findViewById(R.id.detailImagePlaceholder));
+            }
+        }
+        if (attachment != null && fileUrl != null && !fileUrl.isEmpty()) {
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
+            attachment.setVisibility(View.VISIBLE);
+            attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
+        }
         if (approvalsText != null) {
             approvalsText.setText("👍 " + approvals + " Approvals");
             final boolean[] isApproved = {false};
@@ -140,6 +202,58 @@ public class PostDetailsActivity extends AppCompatActivity {
         }
     }
 
+    private void showAttachmentOptions(String fileUrl, String fileName) {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_attachment_options, null);
+        dialogView.findViewById(R.id.optionViewAttachment).setOnClickListener(v -> {
+            dialog.dismiss();
+            viewAttachment(fileUrl);
+        });
+        dialogView.findViewById(R.id.optionDownloadAttachment).setOnClickListener(v -> {
+            dialog.dismiss();
+            downloadAttachment(fileUrl, fileName);
+        });
+        dialog.setContentView(dialogView);
+        dialog.show();
+    }
+
+    private boolean isImageAttachment(String fileUrl) {
+        if (fileUrl == null) return false;
+        String path = fileUrl.toLowerCase(java.util.Locale.US);
+        int queryIndex = path.indexOf('?');
+        if (queryIndex >= 0) path = path.substring(0, queryIndex);
+        return path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png");
+    }
+
+    private void viewAttachment(String fileUrl) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fileUrl)));
+        } catch (Exception e) {
+            Toast.makeText(this, "No app can open this attachment.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void downloadAttachment(String fileUrl, String fileName) {
+        try {
+            android.app.DownloadManager.Request request =
+                    new android.app.DownloadManager.Request(android.net.Uri.parse(fileUrl));
+            request.setTitle(fileName);
+            request.setDescription("Downloading attachment");
+            request.setNotificationVisibility(
+                    android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+            request.setDestinationInExternalPublicDir(
+                    android.os.Environment.DIRECTORY_DOWNLOADS, fileName);
+            android.app.DownloadManager manager =
+                    (android.app.DownloadManager) getSystemService(DOWNLOAD_SERVICE);
+            if (manager != null) {
+                manager.enqueue(request);
+                Toast.makeText(this, "Download started.", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Unable to download attachment.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -197,10 +311,22 @@ public class PostDetailsActivity extends AppCompatActivity {
                 TextView timestamp = commentView.findViewById(R.id.commentTimestamp);
                 TextView content = commentView.findViewById(R.id.commentContent);
                 TextView optionsBtn = commentView.findViewById(R.id.commentOptionsBtn);
+                android.widget.ImageView commentAvatarImage = commentView.findViewById(R.id.commentAvatarImage);
+                TextView commentAvatarText = commentView.findViewById(R.id.commentAvatarText);
 
                 if (author != null) author.setText(comment.getAuthorName() != null && !comment.getAuthorName().isEmpty() ? comment.getAuthorName() : "Student");
                 if (timestamp != null) timestamp.setText(comment.getCreatedAt() != null ? comment.getCreatedAt() : "");
                 if (content != null) content.setText(comment.getContent());
+
+                String avatarTarget = comment.getProfilePicUrl();
+                java.io.File commentUserFile = new java.io.File(getFilesDir(), "profile_user_" + comment.getUserId() + ".jpg");
+                if (commentUserFile.exists()) {
+                    avatarTarget = "file://" + commentUserFile.getAbsolutePath();
+                }
+                if (avatarTarget == null || avatarTarget.isEmpty()) {
+                    avatarTarget = prefs.getString("USER_PROFILE_PIC_URI_" + comment.getUserId(), "");
+                }
+                AvatarHelper.loadAvatar(this, avatarTarget, commentAvatarImage, commentAvatarText);
 
                 boolean isCommentOwner = false;
                 if (currentUserId > 0 && comment.getUserId() == currentUserId) {

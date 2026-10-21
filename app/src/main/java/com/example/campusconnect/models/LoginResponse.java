@@ -29,6 +29,8 @@ public class LoginResponse {
         private String full_name;
         @com.google.gson.annotations.SerializedName("username")
         private String username;
+        @com.google.gson.annotations.SerializedName("profile_pic_url")
+        private String profile_pic_url;
         @com.google.gson.annotations.SerializedName("created_at")
         private String created_at;
         @com.google.gson.annotations.SerializedName("posts_count")
@@ -38,6 +40,7 @@ public class LoginResponse {
         public String getEmail() { return email; }
         public String getFullName() { return full_name; }
         public String getUsername() { return username; }
+        public String getProfilePicUrl() { return profile_pic_url; }
         public String getCreatedAt() { return created_at; }
         public int getPostsCount() { return posts_count; }
     }

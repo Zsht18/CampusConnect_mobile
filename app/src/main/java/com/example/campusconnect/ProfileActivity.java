@@ -8,6 +8,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -296,7 +297,7 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void bindAttachment(TextView attachment, String fileUrl) {
         if (attachment == null || fileUrl == null || fileUrl.isEmpty()) return;
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+        String fileName = android.net.Uri.parse(fileUrl).getLastPathSegment();
         attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
         attachment.setVisibility(View.VISIBLE);
         attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
@@ -455,6 +456,7 @@ public class ProfileActivity extends AppCompatActivity {
         View optionUsername = dialogView.findViewById(R.id.optionChangeUsername);
         View optionPassword = dialogView.findViewById(R.id.optionChangePassword);
         View optionPicture = dialogView.findViewById(R.id.optionChangePicture);
+        View optionPreferredCollege = dialogView.findViewById(R.id.optionPreferredCollege);
 
         if (optionUsername != null) {
             optionUsername.setOnClickListener(v -> {
@@ -477,7 +479,48 @@ public class ProfileActivity extends AppCompatActivity {
             });
         }
 
+        if (optionPreferredCollege != null) {
+            optionPreferredCollege.setOnClickListener(v -> {
+                dialog.dismiss();
+                showPreferredCollegeDialog();
+            });
+        }
+
         dialog.setContentView(dialogView);
+        dialog.show();
+    }
+
+    private void showPreferredCollegeDialog() {
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_preferred_college, null);
+        dialog.setContentView(dialogView);
+
+        Spinner spinner = dialogView.findViewById(R.id.preferredCollegeSpinner);
+        android.widget.ArrayAdapter<CharSequence> adapter =
+                android.widget.ArrayAdapter.createFromResource(this, R.array.college_choices,
+                        R.layout.item_college_spinner);
+        adapter.setDropDownViewResource(R.layout.item_college_spinner_dropdown);
+        spinner.setAdapter(adapter);
+        spinner.setPopupBackgroundDrawable(
+                getDrawable(R.drawable.college_spinner_popup_bg));
+
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        int userId = prefs.getInt("USER_ID", 1);
+        String preferred = prefs.getString("PREFERRED_COLLEGE_" + userId, "");
+        for (int i = 0; i < adapter.getCount(); i++) {
+            if (adapter.getItem(i).toString().equals(preferred)) {
+                spinner.setSelection(i);
+                break;
+            }
+        }
+
+        View save = dialogView.findViewById(R.id.savePreferredCollegeButton);
+        save.setOnClickListener(v -> {
+            String college = spinner.getSelectedItem().toString();
+            prefs.edit().putString("PREFERRED_COLLEGE_" + userId, college).apply();
+            Toast.makeText(this, "Preferred college saved.", Toast.LENGTH_SHORT).show();
+            dialog.dismiss();
+        });
         dialog.show();
     }
 

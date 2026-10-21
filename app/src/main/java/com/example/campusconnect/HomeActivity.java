@@ -10,6 +10,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -29,17 +30,13 @@ import retrofit2.Response;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private TextView tabNew, tabHot, tabTop;
+    private String selectedCollege;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        tabNew = findViewById(R.id.tabNew);
-        tabHot = findViewById(R.id.tabHot);
-        tabTop = findViewById(R.id.tabTop);
-        
         View feedNew = findViewById(R.id.feedNew);
         View feedHot = findViewById(R.id.feedHot);
         View feedTop = findViewById(R.id.feedTop);
@@ -61,28 +58,40 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
-        if (tabNew != null) {
-            tabNew.setOnClickListener(v -> {
-                feedNew.setVisibility(View.VISIBLE);
-                feedHot.setVisibility(View.GONE);
-                feedTop.setVisibility(View.GONE);
-                updateTabStyles(tabNew);
-            });
-        }
-        if (tabHot != null) {
-            tabHot.setOnClickListener(v -> {
-                feedNew.setVisibility(View.GONE);
-                feedHot.setVisibility(View.VISIBLE);
-                feedTop.setVisibility(View.GONE);
-                updateTabStyles(tabHot);
-            });
-        }
-        if (tabTop != null) {
-            tabTop.setOnClickListener(v -> {
-                feedNew.setVisibility(View.GONE);
-                feedHot.setVisibility(View.GONE);
-                feedTop.setVisibility(View.VISIBLE);
-                updateTabStyles(tabTop);
+        if (feedNew != null) feedNew.setVisibility(View.VISIBLE);
+        if (feedHot != null) feedHot.setVisibility(View.GONE);
+        if (feedTop != null) feedTop.setVisibility(View.GONE);
+
+        Spinner collegeSpinner = findViewById(R.id.collegeFilterSpinner);
+        if (collegeSpinner != null) {
+            android.widget.ArrayAdapter<CharSequence> adapter =
+                    android.widget.ArrayAdapter.createFromResource(this,
+                            R.array.college_choices, R.layout.item_college_spinner);
+            adapter.setDropDownViewResource(R.layout.item_college_spinner_dropdown);
+            collegeSpinner.setAdapter(adapter);
+            int userId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
+            String preferredCollege = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                    .getString("PREFERRED_COLLEGE_" + userId, "");
+            for (int i = 0; i < adapter.getCount(); i++) {
+                if (adapter.getItem(i).toString().equals(preferredCollege)) {
+                    collegeSpinner.setSelection(i);
+                    break;
+                }
+            }
+            collegeSpinner.setPopupBackgroundDrawable(
+                    getDrawable(R.drawable.college_spinner_popup_bg));
+            collegeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+                @Override
+                public void onItemSelected(android.widget.AdapterView<?> parent, View view,
+                                           int position, long id) {
+                    selectedCollege = parent.getItemAtPosition(position).toString();
+                    EditText search = findViewById(R.id.searchEditText);
+                    fetchLivePosts(search == null ? null : search.getText().toString().trim());
+                }
+
+                @Override
+                public void onNothingSelected(android.widget.AdapterView<?> parent) {
+                }
             });
         }
 
@@ -211,7 +220,7 @@ public class HomeActivity extends AppCompatActivity {
     private void fetchLivePosts(String searchQuery) {
         String cleanQuery = (searchQuery != null && !searchQuery.isEmpty()) ? searchQuery : null;
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
-        Call<List<PostModel>> call = apiService.getPosts(null, null, cleanQuery);
+        Call<List<PostModel>> call = apiService.getPosts(selectedCollege, null, cleanQuery);
         call.enqueue(new Callback<List<PostModel>>() {
             @Override
             public void onResponse(Call<List<PostModel>> call, Response<List<PostModel>> response) {
@@ -396,7 +405,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void bindAttachment(TextView attachment, String fileUrl) {
         if (attachment == null || fileUrl == null || fileUrl.isEmpty()) return;
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+        String fileName = android.net.Uri.parse(fileUrl).getLastPathSegment();
         attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
         attachment.setVisibility(View.VISIBLE);
         attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
@@ -559,18 +568,4 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    private void updateTabStyles(TextView selectedTab) {
-        TextView[] allTabs = {tabNew, tabHot, tabTop};
-        for (TextView tab : allTabs) {
-            if (tab != null) {
-                tab.setBackground(null);
-                tab.setTextColor(Color.parseColor("#666666"));
-            }
-        }
-
-        if (selectedTab != null) {
-            selectedTab.setBackgroundResource(R.drawable.tab_best_bg);
-            selectedTab.setTextColor(Color.parseColor("#000000"));
-        }
-    }
 }

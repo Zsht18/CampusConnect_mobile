@@ -119,7 +119,7 @@ public class PostDetailsActivity extends AppCompatActivity {
             }
         }
         if (attachment != null && fileUrl != null && !fileUrl.isEmpty()) {
-            String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+            String fileName = android.net.Uri.parse(fileUrl).getLastPathSegment();
             attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
             attachment.setVisibility(View.VISIBLE);
             attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));

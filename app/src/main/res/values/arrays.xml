@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="college_choices">
+        <item>College of Computing Studies</item>
+        <item>College of Business &amp; Accountancy</item>
+        <item>College of Arts &amp; Sciences</item>
+        <item>College of Engineering</item>
+        <item>College of Education</item>
+        <item>College of Nursing/Health &amp; Allied Medical Professions</item>
+        <item>College of Criminal Justice Education</item>
+    </string-array>
+</resources>

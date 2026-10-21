@@ -122,13 +122,6 @@
                                 android:textColor="#483D8B"/>
                         </androidx.cardview.widget.CardView>
 
-                        <View
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_gravity="top|end"
-                            android:layout_marginTop="4dp"
-                            android:layout_marginEnd="8dp"
-                            android:background="@drawable/status_dot_green" />
                     </FrameLayout>
 
                     <LinearLayout

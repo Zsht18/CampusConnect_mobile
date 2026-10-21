@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Switch;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,7 +26,7 @@ import retrofit2.Response;
 public class EditPostActivity extends AppCompatActivity {
 
     private EditText editPostTitleInput;
-    private EditText editPostCategoryInput;
+    private Spinner editPostCategoryInput;
     private EditText editPostContentInput;
     private Switch editSwitchAnonymous;
     private Button btnUpdatePost;
@@ -48,14 +49,31 @@ public class EditPostActivity extends AppCompatActivity {
 
         editPostTitleInput = findViewById(R.id.editPostTitleInput);
         editPostCategoryInput = findViewById(R.id.editPostCategoryInput);
+        android.widget.ArrayAdapter<CharSequence> collegeAdapter =
+                android.widget.ArrayAdapter.createFromResource(this, R.array.college_choices,
+                        R.layout.item_college_spinner);
+        collegeAdapter.setDropDownViewResource(R.layout.item_college_spinner_dropdown);
+        editPostCategoryInput.setAdapter(collegeAdapter);
+        editPostCategoryInput.setPopupBackgroundDrawable(
+                getDrawable(R.drawable.college_spinner_popup_bg));
+        int preferredUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                .getInt("USER_ID", postUserId > 0 ? postUserId : 1);
+        String preferredCollege = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+                .getString("PREFERRED_COLLEGE_" + preferredUserId, "");
+        selectCollege(collegeAdapter, editPostCategoryInput,
+                initialCategory != null && !initialCategory.isEmpty() ? initialCategory : preferredCollege);
         editPostContentInput = findViewById(R.id.editPostContentInput);
         editSwitchAnonymous = findViewById(R.id.editSwitchAnonymous);
         btnUpdatePost = findViewById(R.id.btnUpdatePost);
 
         if (initialTitle != null) editPostTitleInput.setText(initialTitle);
-        if (initialCategory != null) editPostCategoryInput.setText(initialCategory);
         if (initialContent != null) editPostContentInput.setText(initialContent);
         if (editSwitchAnonymous != null) editSwitchAnonymous.setChecked(initialAnonymous == 1);
+        updatePostingOption(initialAnonymous == 1);
+        if (editSwitchAnonymous != null) {
+            editSwitchAnonymous.setOnCheckedChangeListener((buttonView, isChecked) ->
+                    updatePostingOption(isChecked));
+        }
 
         Button btnCancel = findViewById(R.id.btnCancelEdit);
         if (btnCancel != null) {
@@ -77,6 +95,43 @@ public class EditPostActivity extends AppCompatActivity {
 
         if (btnUpdatePost != null) {
             btnUpdatePost.setOnClickListener(v -> updatePost());
+        }
+    }
+
+    private void updatePostingOption(boolean anonymous) {
+        android.widget.ImageView imageView = findViewById(R.id.editPostingOptionAvatarImage);
+        TextView textView = findViewById(R.id.editPostingOptionAvatarText);
+        if (anonymous) {
+            AvatarHelper.loadAvatar(this, "", imageView, textView);
+        } else {
+            SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+            int userId = prefs.getInt("USER_ID", postUserId > 0 ? postUserId : 1);
+            java.io.File localFile = new java.io.File(getFilesDir(), "profile_user_" + userId + ".jpg");
+            String target = localFile.exists()
+                    ? "file://" + localFile.getAbsolutePath()
+                    : prefs.getString("USER_PROFILE_PIC_URI_" + userId, "");
+            AvatarHelper.loadAvatar(this, target, imageView, textView);
+        }
+
+        TextView label = findViewById(R.id.editPostingOptionLabel);
+        if (label != null) {
+            label.setText(anonymous ? "Post Anonymously" : "Post Publicly");
+        }
+        TextView description = findViewById(R.id.editPostingOptionDescription);
+        if (description != null) {
+            description.setText(anonymous
+                    ? "Your name will NOT be visible to other students."
+                    : "Your name will be visible to other students.");
+        }
+    }
+
+    private void selectCollege(android.widget.ArrayAdapter<CharSequence> adapter,
+                               Spinner spinner, String college) {
+        for (int i = 0; i < adapter.getCount(); i++) {
+            if (adapter.getItem(i).toString().equals(college)) {
+                spinner.setSelection(i);
+                return;
+            }
         }
     }
 
@@ -128,7 +183,7 @@ public class EditPostActivity extends AppCompatActivity {
 
     private void updatePost() {
         String title = editPostTitleInput.getText().toString().trim();
-        String category = editPostCategoryInput.getText().toString().trim();
+        String category = editPostCategoryInput.getSelectedItem().toString().trim();
         String content = editPostContentInput.getText().toString().trim();
         int isAnonymous = editSwitchAnonymous.isChecked() ? 1 : 0;
 

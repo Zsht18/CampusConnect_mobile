@@ -77,7 +77,7 @@ public class SavedPostsActivity extends AppCompatActivity {
             AvatarHelper.loadAvatar(this, avatarTarget, avatarImage, avatarText);
 
             if (post.getFileUrl() != null && !post.getFileUrl().isEmpty()) {
-                String fileName = post.getFileUrl().substring(post.getFileUrl().lastIndexOf('/') + 1);
+                String fileName = android.net.Uri.parse(post.getFileUrl()).getLastPathSegment();
                 attachment.setText("📎 Download attachment: " + fileName);
                 attachment.setVisibility(View.VISIBLE);
             }

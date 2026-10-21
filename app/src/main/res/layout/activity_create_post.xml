@@ -159,31 +159,18 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Category"
+                        android:text="College"
                         android:textColor="#000000"
                         android:textStyle="bold"
                         android:textSize="14sp" />
 
-                    <LinearLayout
+                    <Spinner
+                        android:id="@+id/postCategoryInput"
                         android:layout_width="match_parent"
-                        android:layout_height="48dp"
+                        android:layout_height="52dp"
                         android:layout_marginTop="8dp"
-                        android:background="@drawable/create_post_input_bg"
-                        android:gravity="center_vertical"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp">
-
-                        <EditText
-                            android:id="@+id/postCategoryInput"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@null"
-                            android:hint="Type category here..."
-                            android:inputType="text"
-                            android:textColor="#000000"
-                            android:textStyle="bold"
-                            android:textSize="12sp" />
-                    </LinearLayout>
+                        android:background="@drawable/college_spinner_bg"
+                        android:spinnerMode="dropdown" />
                 </LinearLayout>
 
                 <!-- Question/Discussion Input -->
@@ -217,14 +204,6 @@
                         android:textSize="12sp"
                         android:inputType="textMultiLine" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end"
-                        android:layout_marginTop="4dp"
-                        android:text="57/500"
-                        android:textColor="#999999"
-                        android:textSize="10sp" />
                 </LinearLayout>
 
                 <!-- Attach File Section -->
@@ -307,7 +286,16 @@
                             app:cardBackgroundColor="#E6E6FA"
                             app:cardCornerRadius="16dp"
                             app:cardElevation="0dp">
+                            <ImageView
+                                android:id="@+id/postingOptionAvatarImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:scaleType="centerCrop"
+                                android:visibility="gone"
+                                android:contentDescription="Profile picture" />
+
                             <TextView
+                                android:id="@+id/postingOptionAvatarText"
                                 android:layout_width="match_parent"
                                 android:layout_height="match_parent"
                                 android:text="👤"
@@ -323,12 +311,14 @@
                             android:layout_weight="1"
                             android:orientation="vertical">
                             <TextView
+                                android:id="@+id/postingOptionLabel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Post Anonymously"
+                                android:text="Post Publicly"
                                 android:textColor="#333333"
                                 android:textSize="12sp" />
                             <TextView
+                                android:id="@+id/postingOptionDescription"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Your name will be visible to other students."

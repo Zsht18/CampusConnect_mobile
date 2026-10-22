@@ -333,9 +333,38 @@ public class ProfileActivity extends AppCompatActivity {
 
     private void viewAttachment(String fileUrl) {
         try {
-            startActivity(new Intent(Intent.ACTION_VIEW, android.net.Uri.parse(fileUrl)));
+            android.net.Uri uri = android.net.Uri.parse(fileUrl);
+            String lower = fileUrl.toLowerCase();
+            if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif") || lower.endsWith(".webp")) {
+                android.app.Dialog imgDialog = new android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+                android.widget.ImageView imgView = new android.widget.ImageView(this);
+                imgView.setLayoutParams(new android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT));
+                imgView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+                imgView.setBackgroundColor(android.graphics.Color.BLACK);
+
+                new Thread(() -> {
+                    try {
+                        java.net.URL url = new java.net.URL(fileUrl);
+                        android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeStream(url.openConnection().getInputStream());
+                        if (bmp != null) {
+                            runOnUiThread(() -> imgView.setImageBitmap(bmp));
+                        }
+                    } catch (Exception e) {
+                        // ignore
+                    }
+                }).start();
+
+                imgView.setOnClickListener(v -> imgDialog.dismiss());
+                imgDialog.setContentView(imgView);
+                imgDialog.show();
+            } else {
+                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                startActivity(intent);
+            }
         } catch (Exception e) {
-            Toast.makeText(this, "No app can open this attachment.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Unable to view attachment.", Toast.LENGTH_SHORT).show();
         }
     }
 

@@ -39,6 +39,19 @@
                 android:textColorHint="#666666"
                 android:textSize="14sp" />
 
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnGetOtp"
+                android:layout_width="160dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/submit_report_btn_bg"
+                android:text="Get OTP Code"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+
             <EditText
                 android:id="@+id/idNumberEditText"
                 android:layout_width="match_parent"

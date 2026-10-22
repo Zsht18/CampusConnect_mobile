@@ -30,6 +30,19 @@ public interface ApiService {
             @Field("password") String password
     );
 
+    @FormUrlEncoded
+    @POST("send_otp.php")
+    Call<com.example.campusconnect.models.GenericResponse> sendOtp(
+            @Field("email") String email
+    );
+
+    @FormUrlEncoded
+    @POST("verify_otp.php")
+    Call<com.example.campusconnect.models.GenericResponse> verifyOtp(
+            @Field("email") String email,
+            @Field("otp_code") String otpCode
+    );
+
     @Multipart
     @POST("create_post.php")
     Call<com.example.campusconnect.models.GenericResponse> createPost(

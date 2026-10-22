@@ -14,6 +14,17 @@ $password = isset($_POST['password']) ? trim($_POST['password']) : '';
 
 if(!empty($email) && !empty($id_number) && !empty($full_name) && !empty($username) && !empty($password)){
 
+    // Validate institutional email
+    $blocked_domains = array('gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'live.com', 'icloud.com', 'me.com', 'aol.com', 'mail.com', 'zoho.com', 'proton.me', 'protonmail.com');
+    $email_parts = explode('@', $email);
+    $email_domain = count($email_parts) > 1 ? strtolower(end($email_parts)) : '';
+
+    if (in_array($email_domain, $blocked_domains) || (strpos($email_domain, '.edu') === false && strpos($email_domain, '.ac.') === false)) {
+        http_response_code(200);
+        echo json_encode(array("success" => false, "message" => "Institutional/School Emails Only"));
+        exit();
+    }
+
     // Check if email, id_number, or username already exists (case-insensitive)
     $checkQuery = "SELECT id, institutional_email, id_number, username FROM mobile_users WHERE LOWER(institutional_email) = LOWER(:email) OR id_number = :id_number OR LOWER(username) = LOWER(:username) LIMIT 1";
     $checkStmt = $conn->prepare($checkQuery);

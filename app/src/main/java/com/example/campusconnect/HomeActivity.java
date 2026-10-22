@@ -8,7 +8,10 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -21,13 +24,20 @@ import com.example.campusconnect.api.ApiService;
 import com.example.campusconnect.models.GenericResponse;
 import com.example.campusconnect.models.PostModel;
 import com.example.campusconnect.models.SearchModel;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
+import java.io.File;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * HomeActivity serves as the main feed screen.
+ * Displays live posts filtered by college and search query, handles swipe-to-refresh,
+ * search suggestions, post interactions (like, dislike, save, delete, report), and navigation.
+ */
 public class HomeActivity extends AppCompatActivity {
 
     private String selectedCollege;
@@ -35,7 +45,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
+        setContentView(R.layout.activity_home); // Bind layout
 
         View feedNew = findViewById(R.id.feedNew);
         View feedHot = findViewById(R.id.feedHot);
@@ -44,6 +54,7 @@ public class HomeActivity extends AppCompatActivity {
         View profileIconBtn = findViewById(R.id.profileIconBtn);
         View btnAddPost = findViewById(R.id.btnAddPost);
 
+        // Open Profile screen when header avatar icon is tapped
         if (profileIconBtn != null) {
             profileIconBtn.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
@@ -51,6 +62,7 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
+        // Open Create Post screen when "+" button is tapped
         if (btnAddPost != null) {
             btnAddPost.setOnClickListener(v -> {
                 Intent intent = new Intent(HomeActivity.this, CreatePostActivity.class);
@@ -58,17 +70,20 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
+        // Default tab visibility settings
         if (feedNew != null) feedNew.setVisibility(View.VISIBLE);
         if (feedHot != null) feedHot.setVisibility(View.GONE);
         if (feedTop != null) feedTop.setVisibility(View.GONE);
 
+        // Configure College Filter Spinner
         Spinner collegeSpinner = findViewById(R.id.collegeFilterSpinner);
         if (collegeSpinner != null) {
-            android.widget.ArrayAdapter<CharSequence> adapter =
-                    android.widget.ArrayAdapter.createFromResource(this,
-                            R.array.college_choices, R.layout.item_college_spinner);
+            ArrayAdapter<CharSequence> adapter =
+                    ArrayAdapter.createFromResource(this, R.array.college_choices, R.layout.item_college_spinner);
             adapter.setDropDownViewResource(R.layout.item_college_spinner_dropdown);
             collegeSpinner.setAdapter(adapter);
+
+            // Pre-select user's preferred college if saved
             int userId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
             String preferredCollege = getSharedPreferences("AppPrefs", MODE_PRIVATE)
                     .getString("PREFERRED_COLLEGE_" + userId, "");
@@ -78,25 +93,26 @@ public class HomeActivity extends AppCompatActivity {
                     break;
                 }
             }
-            collegeSpinner.setPopupBackgroundDrawable(
-                    getDrawable(R.drawable.college_spinner_popup_bg));
-            collegeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            collegeSpinner.setPopupBackgroundDrawable(getDrawable(R.drawable.college_spinner_popup_bg));
+            
+            // Filter feed when a different college is selected
+            collegeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
-                public void onItemSelected(android.widget.AdapterView<?> parent, View view,
-                                           int position, long id) {
+                public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                     selectedCollege = parent.getItemAtPosition(position).toString();
                     EditText search = findViewById(R.id.searchEditText);
                     fetchLivePosts(search == null ? null : search.getText().toString().trim());
                 }
 
                 @Override
-                public void onNothingSelected(android.widget.AdapterView<?> parent) {
-                }
+                public void onNothingSelected(AdapterView<?> parent) {}
             });
         }
 
+        // Configure Real-time Search Input
         EditText searchEditText = findViewById(R.id.searchEditText);
         if (searchEditText != null) {
+            // Filter posts dynamically as user types
             searchEditText.addTextChangedListener(new TextWatcher() {
                 @Override
                 public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -110,6 +126,7 @@ public class HomeActivity extends AppCompatActivity {
                 public void afterTextChanged(Editable s) {}
             });
 
+            // Record search query when Enter / Search key is pressed on keyboard
             searchEditText.setOnEditorActionListener((v, actionId, event) -> {
                 if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
                     (event != null && event.getKeyCode() == android.view.KeyEvent.KEYCODE_ENTER && event.getAction() == android.view.KeyEvent.ACTION_DOWN)) {
@@ -124,6 +141,7 @@ public class HomeActivity extends AppCompatActivity {
             });
         }
 
+        // Configure Swipe-to-Refresh gesture
         SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         if (swipeRefreshLayout != null) {
             swipeRefreshLayout.setOnRefreshListener(() -> {
@@ -138,13 +156,16 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        AvatarHelper.loadHeaderAvatar(this);
+        AvatarHelper.loadHeaderAvatar(this); // Load user avatar into top header
         EditText searchEditText = findViewById(R.id.searchEditText);
         String query = searchEditText != null ? searchEditText.getText().toString().trim() : null;
-        fetchLivePosts(query);
-        fetchTrendingSearches();
+        fetchLivePosts(query); // Reload feed
+        fetchTrendingSearches(); // Reload trending searches
     }
 
+    /**
+     * Records search query to backend for calculating trending searches.
+     */
     private void recordSearchQuery(String query) {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<GenericResponse> call = apiService.recordSearch(query);
@@ -155,12 +176,13 @@ public class HomeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<GenericResponse> call, Throwable t) {
-                // Ignore
-            }
+            public void onFailure(Call<GenericResponse> call, Throwable t) {}
         });
     }
 
+    /**
+     * Fetches top trending search terms from backend.
+     */
     private void fetchTrendingSearches() {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<List<SearchModel>> call = apiService.getTrendingSearches();
@@ -181,6 +203,9 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Dynamically populates trending search chips inside the dark card container.
+     */
     private void populateTrendingSearches(List<SearchModel> searches) {
         View card = findViewById(R.id.trendingSearchesCard);
         LinearLayout container = findViewById(R.id.trendingSearchesContainer);
@@ -217,6 +242,9 @@ public class HomeActivity extends AppCompatActivity {
         fetchLivePosts(null);
     }
 
+    /**
+     * Fetches live posts from backend database matching the selected college filter and search query.
+     */
     private void fetchLivePosts(String searchQuery) {
         String cleanQuery = (searchQuery != null && !searchQuery.isEmpty()) ? searchQuery : null;
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
@@ -230,12 +258,13 @@ public class HomeActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<PostModel>> call, Throwable t) {
-                // Ignore or handle network failure gracefully
-            }
+            public void onFailure(Call<List<PostModel>> call, Throwable t) {}
         });
     }
 
+    /**
+     * Renders post item views into the active feed container.
+     */
     private void populatePosts(List<PostModel> posts) {
         LinearLayout postsContainerNew = findViewById(R.id.postsContainerNew);
         LinearLayout postsContainerHot = findViewById(R.id.postsContainerHot);
@@ -261,28 +290,29 @@ public class HomeActivity extends AppCompatActivity {
                         TextView commentsCount = postView.findViewById(R.id.postCommentsCount);
                         TextView saveButton = postView.findViewById(R.id.postSaveButton);
                         TextView optionsBtn = postView.findViewById(R.id.postOptionsBtn);
-                        android.widget.ImageView postAvatarImg = postView.findViewById(R.id.postAvatarImage);
+                        ImageView postAvatarImg = postView.findViewById(R.id.postAvatarImage);
                         TextView postAvatarTxt = postView.findViewById(R.id.postAvatarText);
 
-                        java.io.File userLocalFile = new java.io.File(getFilesDir(), "profile_user_" + post.getUserId() + ".jpg");
+                        // Load post author avatar
+                        File userLocalFile = new File(getFilesDir(), "profile_user_" + post.getUserId() + ".jpg");
 
                         String avatarTarget = "";
-                        if (post.getIsAnonymous() == 0 && post.getProfilePicUrl() != null && !post.getProfilePicUrl().isEmpty()) {
+                        if (post.getProfilePicUrl() != null && !post.getProfilePicUrl().isEmpty()) {
                             avatarTarget = post.getProfilePicUrl();
-                        } else if (post.getIsAnonymous() == 0 && userLocalFile.exists()) {
+                        } else if (userLocalFile.exists()) {
                             avatarTarget = "file://" + userLocalFile.getAbsolutePath();
                         }
 
                         AvatarHelper.loadAvatar(this, avatarTarget, postAvatarImg, postAvatarTxt);
 
+                        // Bind attachment link & optional image preview
                         TextView attachment = postView.findViewById(R.id.postAttachment);
                         bindAttachment(attachment, post.getFileUrl());
                         View imagePlaceholder = postView.findViewById(R.id.postImagePlaceholder);
                         if (imagePlaceholder != null) {
                             imagePlaceholder.setVisibility(isImageAttachment(post.getFileUrl()) ? View.VISIBLE : View.GONE);
                             if (isImageAttachment(post.getFileUrl())) {
-                                PostAttachmentHelper.loadImage(this, post.getFileUrl(),
-                                        (android.widget.ImageView) imagePlaceholder);
+                                PostAttachmentHelper.loadImage(this, post.getFileUrl(), (ImageView) imagePlaceholder);
                             }
                         }
 
@@ -302,6 +332,7 @@ public class HomeActivity extends AppCompatActivity {
                             content.setText(fullText);
                         }
 
+                        // Like button toggle listener
                         if (approvals != null) {
                             approvals.setText("👍 " + post.getApprovals() + " Likes");
                             final boolean[] isApproved = {false};
@@ -311,16 +342,17 @@ public class HomeActivity extends AppCompatActivity {
                                     isApproved[0] = true;
                                     currentApprovals[0]++;
                                     approvals.setText("👍 " + currentApprovals[0] + " Likes");
-                                    Toast.makeText(this, "Post approved!", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(this, "Post liked!", Toast.LENGTH_SHORT).show();
                                 } else {
                                     isApproved[0] = false;
                                     currentApprovals[0]--;
                                     approvals.setText("👍 " + currentApprovals[0] + " Likes");
-                                    Toast.makeText(this, "Approval removed", Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(this, "Like removed", Toast.LENGTH_SHORT).show();
                                 }
                             });
                         }
 
+                        // Dislike button toggle listener
                         TextView dislikes = postView.findViewById(R.id.postDislikes);
                         if (dislikes != null) {
                             dislikes.setText("👎 " + post.getShares() + " Dislikes");
@@ -341,6 +373,7 @@ public class HomeActivity extends AppCompatActivity {
                             });
                         }
 
+                        // Comments button listener -> opens PostDetailsActivity
                         if (commentsCount != null) {
                             commentsCount.setText("💬 " + post.getCommentsCount());
                             commentsCount.setOnClickListener(v -> {
@@ -358,15 +391,15 @@ public class HomeActivity extends AppCompatActivity {
                                 startActivity(intent);
                             });
                         }
+
+                        // Save post button toggle
                         if (saveButton != null) {
-                            int savedUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                                    .getInt("USER_ID", 1);
+                            int savedUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
                             if (SavedPostsStore.contains(this, post.getId(), savedUserId)) {
                                 saveButton.setText("🔖 Saved");
                             }
                             saveButton.setOnClickListener(v -> {
-                                int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                                        .getInt("USER_ID", 1);
+                                int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
                                 boolean saved = SavedPostsStore.contains(this, post.getId(), currentUserId);
                                 if (saved) {
                                     SavedPostsStore.remove(this, post.getId(), currentUserId);
@@ -380,6 +413,7 @@ public class HomeActivity extends AppCompatActivity {
                             });
                         }
 
+                        // Open post details when post card is clicked
                         postView.setOnClickListener(v -> {
                             Intent intent = new Intent(HomeActivity.this, PostDetailsActivity.class);
                             intent.putExtra("POST_ID", post.getId());
@@ -403,14 +437,20 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Binds attachment link to post view.
+     */
     private void bindAttachment(TextView attachment, String fileUrl) {
         if (attachment == null || fileUrl == null || fileUrl.isEmpty()) return;
         String fileName = android.net.Uri.parse(fileUrl).getLastPathSegment();
-        attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
+        attachment.setText("📎 Download attachment" + (fileName == null || fileName.isEmpty() ? "" : ": " + fileName));
         attachment.setVisibility(View.VISIBLE);
         attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
     }
 
+    /**
+     * Checks if file URL points to an image file format.
+     */
     private boolean isImageAttachment(String fileUrl) {
         if (fileUrl == null) return false;
         String path = fileUrl.toLowerCase(java.util.Locale.US);
@@ -424,9 +464,11 @@ public class HomeActivity extends AppCompatActivity {
                 ? post.getAuthorName() : "Student";
     }
 
+    /**
+     * Displays attachment bottom sheet options (View vs Download).
+     */
     private void showAttachmentOptions(String fileUrl, String fileName) {
-        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
-                new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_attachment_options, null);
         dialogView.findViewById(R.id.optionViewAttachment).setOnClickListener(v -> {
             dialog.dismiss();
@@ -440,18 +482,21 @@ public class HomeActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Opens in-app full-screen photo viewer for image attachments, or system viewer for documents.
+     */
     private void viewAttachment(String fileUrl) {
         try {
             android.net.Uri uri = android.net.Uri.parse(fileUrl);
             String lower = fileUrl.toLowerCase();
             if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif") || lower.endsWith(".webp")) {
                 android.app.Dialog imgDialog = new android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-                android.widget.ImageView imgView = new android.widget.ImageView(this);
+                ImageView imgView = new ImageView(this);
                 imgView.setLayoutParams(new android.view.ViewGroup.LayoutParams(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-                imgView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-                imgView.setBackgroundColor(android.graphics.Color.BLACK);
+                imgView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                imgView.setBackgroundColor(Color.BLACK);
 
                 new Thread(() -> {
                     try {
@@ -477,6 +522,9 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Enqueues download request with Android DownloadManager.
+     */
     private void downloadAttachment(String fileUrl, String fileName) {
         try {
             android.app.DownloadManager.Request request =
@@ -503,11 +551,14 @@ public class HomeActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    /**
+     * Shows 3-dots popup options (Edit/Delete for author, Report for non-authors).
+     */
     public void showPostOptions(View view) {
         PostModel post = (PostModel) view.getTag();
         int postUserId = post != null ? post.getUserId() : 0;
 
-        android.content.SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         int currentUserId = prefs.getInt("USER_ID", 0);
         String currentFullName = prefs.getString("USER_FULL_NAME", "");
 
@@ -521,8 +572,7 @@ public class HomeActivity extends AppCompatActivity {
             isOwner = true;
         }
 
-        com.google.android.material.bottomsheet.BottomSheetDialog dialog =
-            new com.google.android.material.bottomsheet.BottomSheetDialog(this);
+        BottomSheetDialog dialog = new BottomSheetDialog(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_post_options, null);
 
         View optionReport = dialogView.findViewById(R.id.optionReportPost);
@@ -576,6 +626,9 @@ public class HomeActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Sends post deletion request to backend API.
+     */
     private void deletePost(int postId, int userId) {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<GenericResponse> call = apiService.deletePost(postId, userId);

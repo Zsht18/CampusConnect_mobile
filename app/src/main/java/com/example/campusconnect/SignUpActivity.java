@@ -1,6 +1,10 @@
 package com.example.campusconnect;
 
+import android.app.Dialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -16,6 +20,11 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * SignUpActivity handles new student account registration.
+ * It enforces institutional email domain validation (.edu / .edu.ph),
+ * OTP verification via email, and submits account creation requests to backend.
+ */
 public class SignUpActivity extends AppCompatActivity {
 
     private EditText emailEditText;
@@ -28,13 +37,15 @@ public class SignUpActivity extends AppCompatActivity {
     private Button returnToLoginBtn;
     private Button btnGetOtp;
 
+    // Flag indicating whether the institutional email has been verified with OTP
     private boolean isEmailVerified = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_signup);
+        setContentView(R.layout.activity_signup); // Bind layout
 
+        // Initialize UI components
         emailEditText = findViewById(R.id.emailEditText);
         idNumberEditText = findViewById(R.id.idNumberEditText);
         fullNameEditText = findViewById(R.id.fullNameEditText);
@@ -45,10 +56,12 @@ public class SignUpActivity extends AppCompatActivity {
         returnToLoginBtn = findViewById(R.id.returnToLoginBtn);
         btnGetOtp = findViewById(R.id.btnGetOtp);
 
+        // Return to Login Activity when "Return to Login" button is tapped
         if (returnToLoginBtn != null) {
             returnToLoginBtn.setOnClickListener(v -> finish());
         }
 
+        // Handle "Get OTP Code" button click
         if (btnGetOtp != null) {
             btnGetOtp.setOnClickListener(v -> {
                 String email = emailEditText.getText().toString().trim();
@@ -61,6 +74,7 @@ public class SignUpActivity extends AppCompatActivity {
                     return;
                 }
 
+                // Call backend API to generate and send OTP code to email
                 Toast.makeText(this, "Sending OTP code...", Toast.LENGTH_SHORT).show();
                 ApiService apiService = ApiClient.getClient().create(ApiService.class);
                 Call<GenericResponse> call = apiService.sendOtp(email);
@@ -70,7 +84,7 @@ public class SignUpActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null) {
                             Toast.makeText(SignUpActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                             if (response.body().isSuccess()) {
-                                showEnterOtpDialog(email);
+                                showEnterOtpDialog(email); // Show OTP verification popup
                                 btnGetOtp.setText("Resend OTP");
                             }
                         } else {
@@ -86,6 +100,7 @@ public class SignUpActivity extends AppCompatActivity {
             });
         }
 
+        // Handle Sign Up button submission
         signUpButton.setOnClickListener(v -> {
             String email = emailEditText.getText().toString().trim();
             String idNumber = idNumberEditText.getText().toString().trim();
@@ -94,6 +109,7 @@ public class SignUpActivity extends AppCompatActivity {
             String password = passwordEditText.getText().toString().trim();
             String retypePassword = retypePasswordEditText.getText().toString().trim();
 
+            // Input field validation
             if (email.isEmpty() || idNumber.isEmpty() || fullName.isEmpty() || username.isEmpty() || password.isEmpty()) {
                 Toast.makeText(SignUpActivity.this, "Please fill in all fields.", Toast.LENGTH_SHORT).show();
                 return;
@@ -116,6 +132,7 @@ public class SignUpActivity extends AppCompatActivity {
 
             Toast.makeText(SignUpActivity.this, "Signing up...", Toast.LENGTH_SHORT).show();
 
+            // Call backend API to create user account
             ApiService apiService = ApiClient.getClient().create(ApiService.class);
             Call<SignupResponse> call = apiService.signup(email, idNumber, fullName, username, password);
             call.enqueue(new Callback<SignupResponse>() {
@@ -124,7 +141,7 @@ public class SignUpActivity extends AppCompatActivity {
                     if (response.isSuccessful() && response.body() != null) {
                         Toast.makeText(SignUpActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                         if (response.body().isSuccess()) {
-                            finish(); // Return to Login
+                            finish(); // Account created, return to Login
                         }
                     } else {
                         Toast.makeText(SignUpActivity.this, "Signup failed. Please try again.", Toast.LENGTH_SHORT).show();
@@ -140,11 +157,14 @@ public class SignUpActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Displays a popup dialog for entering the 6-digit OTP code sent to email.
+     */
     private void showEnterOtpDialog(String email) {
-        android.app.Dialog dialog = new android.app.Dialog(this);
+        Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.dialog_enter_otp);
         if (dialog.getWindow() != null) {
-            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         }
 
         EditText dialogOtpInput = dialog.findViewById(R.id.dialogOtpInput);
@@ -163,6 +183,7 @@ public class SignUpActivity extends AppCompatActivity {
                     return;
                 }
 
+                // Call backend API to verify entered OTP code
                 Toast.makeText(this, "Verifying OTP...", Toast.LENGTH_SHORT).show();
                 ApiService apiService = ApiClient.getClient().create(ApiService.class);
                 Call<GenericResponse> call = apiService.verifyOtp(email, otpCode);
@@ -196,8 +217,12 @@ public class SignUpActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Validates that the provided email belongs to an institutional/educational domain (.edu / .edu.ph)
+     * and rejects personal domains (Gmail, Yahoo, Outlook, etc.).
+     */
     private boolean isValidInstitutionalEmail(String email) {
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             return false;
         }
         String lowerEmail = email.toLowerCase().trim();

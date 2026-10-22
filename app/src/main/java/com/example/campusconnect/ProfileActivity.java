@@ -25,19 +25,23 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * ProfileActivity displays the logged-in student's profile details,
+ * account age, post contributions, saved posts, and options to edit profile or log out.
+ */
 public class ProfileActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_profile);
+        setContentView(R.layout.activity_profile); // Bind layout
 
         TextView profileUsernameText = findViewById(R.id.profileUsernameText);
         TextView profileHandleText = findViewById(R.id.profileHandleText);
         TextView accountAgeText = findViewById(R.id.accountAgeText);
         TextView postsCountText = findViewById(R.id.postsCountText);
 
-        // Retrieve the data saved from the LoginActivity
+        // Retrieve the saved user session data from LoginActivity
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         int userId = prefs.getInt("USER_ID", 1);
 
@@ -62,6 +66,7 @@ public class ProfileActivity extends AppCompatActivity {
             postsCountText.setText(postsCount + " Posts");
         }
 
+        // Calculate and display relative account age from registration timestamp
         String createdAtStr = prefs.getString("USER_CREATED_AT", "");
         if (createdAtStr != null && !createdAtStr.isEmpty() && accountAgeText != null) {
             java.util.Date createdAtDate = null;
@@ -84,19 +89,20 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
 
-        // Setup Edit Profile button
+        // Setup Edit Profile button listener
         TextView btnEditProfile = findViewById(R.id.btnEditProfile);
         if (btnEditProfile != null) {
             btnEditProfile.setOnClickListener(v -> showEditProfileDialog());
         }
 
+        // Setup Saved Posts button listener
         View savedPostsButton = findViewById(R.id.savedPostsButton);
         if (savedPostsButton != null) {
             savedPostsButton.setOnClickListener(v ->
                     startActivity(new Intent(ProfileActivity.this, SavedPostsActivity.class)));
         }
 
-        // Setup Log Out button
+        // Setup Log Out button listener
         androidx.appcompat.widget.AppCompatButton logoutButton = findViewById(R.id.logoutButton);
         if (logoutButton != null) {
             logoutButton.setOnClickListener(v -> showLogoutConfirmationDialog(prefs));
@@ -106,10 +112,13 @@ public class ProfileActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        AvatarHelper.loadHeaderAvatar(this);
-        fetchUserPosts();
+        AvatarHelper.loadHeaderAvatar(this); // Load user avatar into top header
+        fetchUserPosts(); // Refresh user posts
     }
 
+    /**
+     * Fetches user's own created posts from backend database.
+     */
     private void fetchUserPosts() {
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         int userId = prefs.getInt("USER_ID", 1);
@@ -121,19 +130,18 @@ public class ProfileActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<List<PostModel>> call, Response<List<PostModel>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    // Keep the profile handle from the logged-in account, including when
-                    // the first returned post is anonymous.
                     populateProfilePosts(response.body());
                 }
             }
 
             @Override
-            public void onFailure(Call<List<PostModel>> call, Throwable t) {
-                // Ignore
-            }
+            public void onFailure(Call<List<PostModel>> call, Throwable t) {}
         });
     }
 
+    /**
+     * Renders post item views into profile posts container.
+     */
     private void populateProfilePosts(List<PostModel> posts) {
         LinearLayout container = findViewById(R.id.profilePostsContainer);
         if (container == null) return;
@@ -162,9 +170,9 @@ public class ProfileActivity extends AppCompatActivity {
                 java.io.File userLocalFile = new java.io.File(getFilesDir(), "profile_user_" + post.getUserId() + ".jpg");
 
                 String avatarTarget = "";
-                if (post.getIsAnonymous() == 0 && post.getProfilePicUrl() != null && !post.getProfilePicUrl().isEmpty()) {
+                if (post.getProfilePicUrl() != null && !post.getProfilePicUrl().isEmpty()) {
                     avatarTarget = post.getProfilePicUrl();
-                } else if (post.getIsAnonymous() == 0 && userLocalFile.exists()) {
+                } else if (userLocalFile.exists()) {
                     avatarTarget = "file://" + userLocalFile.getAbsolutePath();
                 }
 
@@ -176,8 +184,7 @@ public class ProfileActivity extends AppCompatActivity {
                 if (imagePlaceholder != null) {
                     imagePlaceholder.setVisibility(isImageAttachment(post.getFileUrl()) ? View.VISIBLE : View.GONE);
                     if (isImageAttachment(post.getFileUrl())) {
-                        PostAttachmentHelper.loadImage(this, post.getFileUrl(),
-                                (android.widget.ImageView) imagePlaceholder);
+                        PostAttachmentHelper.loadImage(this, post.getFileUrl(), (android.widget.ImageView) imagePlaceholder);
                     }
                 }
 
@@ -253,14 +260,12 @@ public class ProfileActivity extends AppCompatActivity {
                     });
                 }
                 if (saveButton != null) {
-                    int savedUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                            .getInt("USER_ID", 1);
+                    int savedUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
                     if (SavedPostsStore.contains(this, post.getId(), savedUserId)) {
                         saveButton.setText("🔖 Saved");
                     }
                     saveButton.setOnClickListener(v -> {
-                        int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
-                                .getInt("USER_ID", 1);
+                        int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
                         boolean saved = SavedPostsStore.contains(this, post.getId(), currentUserId);
                         if (saved) {
                             SavedPostsStore.remove(this, post.getId(), currentUserId);
@@ -298,7 +303,7 @@ public class ProfileActivity extends AppCompatActivity {
     private void bindAttachment(TextView attachment, String fileUrl) {
         if (attachment == null || fileUrl == null || fileUrl.isEmpty()) return;
         String fileName = android.net.Uri.parse(fileUrl).getLastPathSegment();
-        attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
+        attachment.setText("📎 Download attachment" + (fileName == null || fileName.isEmpty() ? "" : ": " + fileName));
         attachment.setVisibility(View.VISIBLE);
         attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
     }
@@ -342,7 +347,7 @@ public class ProfileActivity extends AppCompatActivity {
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT));
                 imgView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-                imgView.setBackgroundColor(android.graphics.Color.BLACK);
+                imgView.setBackgroundColor(Color.BLACK);
 
                 new Thread(() -> {
                     try {

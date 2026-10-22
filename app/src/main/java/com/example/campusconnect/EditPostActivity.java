@@ -7,10 +7,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.OpenableColumns;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Switch;
+import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -19,10 +21,16 @@ import com.example.campusconnect.api.ApiClient;
 import com.example.campusconnect.api.ApiService;
 import com.example.campusconnect.models.GenericResponse;
 
+import java.io.File;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * EditPostActivity allows the author of a post to edit the post's title,
+ * category, content, attached resources, or anonymous setting.
+ */
 public class EditPostActivity extends AppCompatActivity {
 
     private EditText editPostTitleInput;
@@ -38,8 +46,9 @@ public class EditPostActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_edit_post);
+        setContentView(R.layout.activity_edit_post); // Bind layout
 
+        // Retrieve existing post details passed via Intent
         postId = getIntent().getIntExtra("POST_ID", 0);
         postUserId = getIntent().getIntExtra("POST_USER_ID", 0);
         String initialTitle = getIntent().getStringExtra("POST_TITLE");
@@ -49,37 +58,41 @@ public class EditPostActivity extends AppCompatActivity {
 
         editPostTitleInput = findViewById(R.id.editPostTitleInput);
         editPostCategoryInput = findViewById(R.id.editPostCategoryInput);
-        android.widget.ArrayAdapter<CharSequence> collegeAdapter =
-                android.widget.ArrayAdapter.createFromResource(this, R.array.college_choices,
-                        R.layout.item_college_spinner);
+
+        // Configure College selection spinner
+        ArrayAdapter<CharSequence> collegeAdapter =
+                ArrayAdapter.createFromResource(this, R.array.college_choices, R.layout.item_college_spinner);
         collegeAdapter.setDropDownViewResource(R.layout.item_college_spinner_dropdown);
         editPostCategoryInput.setAdapter(collegeAdapter);
-        editPostCategoryInput.setPopupBackgroundDrawable(
-                getDrawable(R.drawable.college_spinner_popup_bg));
+        editPostCategoryInput.setPopupBackgroundDrawable(getDrawable(R.drawable.college_spinner_popup_bg));
+
         int preferredUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE)
                 .getInt("USER_ID", postUserId > 0 ? postUserId : 1);
         String preferredCollege = getSharedPreferences("AppPrefs", MODE_PRIVATE)
                 .getString("PREFERRED_COLLEGE_" + preferredUserId, "");
         selectCollege(collegeAdapter, editPostCategoryInput,
                 initialCategory != null && !initialCategory.isEmpty() ? initialCategory : preferredCollege);
+
         editPostContentInput = findViewById(R.id.editPostContentInput);
         editSwitchAnonymous = findViewById(R.id.editSwitchAnonymous);
         btnUpdatePost = findViewById(R.id.btnUpdatePost);
 
+        // Pre-fill input fields with existing post details
         if (initialTitle != null) editPostTitleInput.setText(initialTitle);
         if (initialContent != null) editPostContentInput.setText(initialContent);
         if (editSwitchAnonymous != null) editSwitchAnonymous.setChecked(initialAnonymous == 1);
         updatePostingOption(initialAnonymous == 1);
         if (editSwitchAnonymous != null) {
-            editSwitchAnonymous.setOnCheckedChangeListener((buttonView, isChecked) ->
-                    updatePostingOption(isChecked));
+            editSwitchAnonymous.setOnCheckedChangeListener((buttonView, isChecked) -> updatePostingOption(isChecked));
         }
 
+        // Cancel button listener -> closes activity
         Button btnCancel = findViewById(R.id.btnCancelEdit);
         if (btnCancel != null) {
             btnCancel.setOnClickListener(v -> finish());
         }
 
+        // Header profile icon listener
         View profileIconBtn = findViewById(R.id.profileIconBtn);
         if (profileIconBtn != null) {
             profileIconBtn.setOnClickListener(v -> {
@@ -88,25 +101,30 @@ public class EditPostActivity extends AppCompatActivity {
             });
         }
 
+        // Attach file container listener
         View uploadBoxContainer = findViewById(R.id.uploadBoxContainer);
         if (uploadBoxContainer != null) {
             uploadBoxContainer.setOnClickListener(v -> openFilePicker());
         }
 
+        // Update post button listener
         if (btnUpdatePost != null) {
             btnUpdatePost.setOnClickListener(v -> updatePost());
         }
     }
 
+    /**
+     * Updates posting option preview label, description, and avatar based on anonymous switch state.
+     */
     private void updatePostingOption(boolean anonymous) {
-        android.widget.ImageView imageView = findViewById(R.id.editPostingOptionAvatarImage);
+        ImageView imageView = findViewById(R.id.editPostingOptionAvatarImage);
         TextView textView = findViewById(R.id.editPostingOptionAvatarText);
         if (anonymous) {
             AvatarHelper.loadAvatar(this, "", imageView, textView);
         } else {
             SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
             int userId = prefs.getInt("USER_ID", postUserId > 0 ? postUserId : 1);
-            java.io.File localFile = new java.io.File(getFilesDir(), "profile_user_" + userId + ".jpg");
+            File localFile = new File(getFilesDir(), "profile_user_" + userId + ".jpg");
             String target = localFile.exists()
                     ? "file://" + localFile.getAbsolutePath()
                     : prefs.getString("USER_PROFILE_PIC_URI_" + userId, "");
@@ -125,8 +143,7 @@ public class EditPostActivity extends AppCompatActivity {
         }
     }
 
-    private void selectCollege(android.widget.ArrayAdapter<CharSequence> adapter,
-                               Spinner spinner, String college) {
+    private void selectCollege(ArrayAdapter<CharSequence> adapter, Spinner spinner, String college) {
         for (int i = 0; i < adapter.getCount(); i++) {
             if (adapter.getItem(i).toString().equals(college)) {
                 spinner.setSelection(i);
@@ -135,6 +152,9 @@ public class EditPostActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Opens system document/file picker for selecting attachment file.
+     */
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("*/*");
@@ -157,6 +177,9 @@ public class EditPostActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Resolves file display name from Uri.
+     */
     private String getFileName(Uri uri) {
         String result = null;
         if (uri.getScheme() != null && uri.getScheme().equals("content")) {
@@ -181,6 +204,9 @@ public class EditPostActivity extends AppCompatActivity {
         return result;
     }
 
+    /**
+     * Submits updated post details to backend API.
+     */
     private void updatePost() {
         String title = editPostTitleInput.getText().toString().trim();
         String category = editPostCategoryInput.getSelectedItem().toString().trim();
@@ -207,7 +233,7 @@ public class EditPostActivity extends AppCompatActivity {
                     Toast.makeText(EditPostActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                     if (response.body().isSuccess()) {
                         setResult(RESULT_OK);
-                        finish();
+                        finish(); // Close activity and return
                     }
                 } else {
                     Toast.makeText(EditPostActivity.this, "Failed to update post.", Toast.LENGTH_SHORT).show();

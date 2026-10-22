@@ -1,12 +1,26 @@
 package com.example.campusconnect;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.campusconnect.api.ApiClient;
+import com.example.campusconnect.api.ApiService;
+import com.example.campusconnect.models.LoginResponse;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
+/**
+ * LoginActivity handles user authentication.
+ * It authenticates ID Number and Password against the backend database
+ * and saves logged-in user details to SharedPreferences.
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private EditText idNumberEditText;
@@ -17,9 +31,9 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login); // Binds the layout
+        setContentView(R.layout.activity_login); // Bind layout
 
-        // Initialize Views
+        // Initialize UI components
         idNumberEditText = findViewById(R.id.idNumberEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
@@ -30,25 +44,26 @@ public class LoginActivity extends AppCompatActivity {
             String idNumber = idNumberEditText.getText().toString().trim();
             String password = passwordEditText.getText().toString().trim();
 
+            // Validate that input fields are not empty
             if (idNumber.isEmpty() || password.isEmpty()) {
                 Toast.makeText(LoginActivity.this, "Please enter both ID Number and password.", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(LoginActivity.this, "Logging in...", Toast.LENGTH_SHORT).show();
 
-                com.example.campusconnect.api.ApiService apiService =
-                    com.example.campusconnect.api.ApiClient.getClient().create(com.example.campusconnect.api.ApiService.class);
+                // Send login request to backend API
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<LoginResponse> call = apiService.login(idNumber, password);
 
-                retrofit2.Call<com.example.campusconnect.models.LoginResponse> call = apiService.login(idNumber, password);
-                call.enqueue(new retrofit2.Callback<com.example.campusconnect.models.LoginResponse>() {
+                call.enqueue(new Callback<LoginResponse>() {
                     @Override
-                    public void onResponse(retrofit2.Call<com.example.campusconnect.models.LoginResponse> call, retrofit2.Response<com.example.campusconnect.models.LoginResponse> response) {
+                    public void onResponse(Call<LoginResponse> call, Response<LoginResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
                             if (response.body().isSuccess()) {
                                 Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
                                 
-                                // Save user data globally using SharedPreferences
-                                android.content.SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
-                                android.content.SharedPreferences.Editor editor = prefs.edit();
+                                // Save logged-in user profile data locally
+                                SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+                                SharedPreferences.Editor editor = prefs.edit();
                                 editor.putString("USER_FULL_NAME", response.body().getUser().getFullName());
                                 if (response.body().getUser().getUsername() != null) {
                                     editor.putString("USER_USERNAME", response.body().getUser().getUsername());
@@ -68,43 +83,32 @@ public class LoginActivity extends AppCompatActivity {
                                 } catch (Exception e) {
                                     editor.putInt("USER_ID", 1);
                                 }
-                                editor.apply();
+                                editor.apply(); // Save changes
 
-                                android.content.Intent intent = new android.content.Intent(LoginActivity.this, HomeActivity.class);
+                                // Navigate to Home Feed screen
+                                Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
                                 startActivity(intent);
-                                finish();
+                                finish(); // Close login screen
                             } else {
-                                // This will print either "Wrong ID Number" or "Wrong password" dynamically from the database
+                                // Display error message returned by server (e.g. "Wrong password")
                                 Toast.makeText(LoginActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         } else {
-                            try {
-                                String errorMsg = "Server Error (" + response.code() + ")";
-                                if (response.errorBody() != null) {
-                                    String errorJson = response.errorBody().string();
-                                    com.google.gson.JsonObject obj = new com.google.gson.JsonParser().parse(errorJson).getAsJsonObject();
-                                    if (obj.has("message")) {
-                                        errorMsg = obj.get("message").getAsString();
-                                    }
-                                }
-                                Toast.makeText(LoginActivity.this, errorMsg, Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(LoginActivity.this, "Server Error (" + response.code() + ")", Toast.LENGTH_SHORT).show();
-                            }
+                            Toast.makeText(LoginActivity.this, "Server Error (" + response.code() + ")", Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
-                    public void onFailure(retrofit2.Call<com.example.campusconnect.models.LoginResponse> call, Throwable t) {
+                    public void onFailure(Call<LoginResponse> call, Throwable t) {
                         Toast.makeText(LoginActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
             }
         });
 
-        // Handle Sign Up button click
+        // Navigate to Sign Up screen when Sign Up button is tapped
         signUpButton.setOnClickListener(v -> {
-            android.content.Intent intent = new android.content.Intent(LoginActivity.this, SignUpActivity.class);
+            Intent intent = new Intent(LoginActivity.this, SignUpActivity.class);
             startActivity(intent);
         });
     }

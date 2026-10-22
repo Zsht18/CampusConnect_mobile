@@ -51,7 +51,7 @@ public interface ApiService {
             @Part("category") RequestBody category,
             @Part("content") RequestBody content,
             @Part("is_anonymous") RequestBody isAnonymous,
-            @Part MultipartBody.Part file
+            @Part java.util.List<okhttp3.MultipartBody.Part> files
     );
 
     @retrofit2.http.GET("get_posts.php")

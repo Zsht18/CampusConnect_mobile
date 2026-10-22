@@ -2,9 +2,11 @@ package com.example.campusconnect;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -17,12 +19,17 @@ import com.example.campusconnect.models.GenericResponse;
 import com.example.campusconnect.models.PostModel;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
+import java.io.File;
 import java.util.List;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+/**
+ * PostDetailsActivity displays detailed view of a selected post,
+ * including full content, attached files/photos, comments list, and comment creation box.
+ */
 public class PostDetailsActivity extends AppCompatActivity {
 
     private int postId = 0;
@@ -31,25 +38,27 @@ public class PostDetailsActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_post_details);
+        setContentView(R.layout.activity_post_details); // Bind layout
 
         postId = getIntent().getIntExtra("POST_ID", 0);
         postUserId = getIntent().getIntExtra("POST_USER_ID", 0);
 
+        // Header profile button
         View profileIconBtn = findViewById(R.id.profileIconBtn);
         if (profileIconBtn != null) {
             profileIconBtn.setOnClickListener(v -> {
-                android.content.Intent intent = new android.content.Intent(PostDetailsActivity.this, ProfileActivity.class);
+                Intent intent = new Intent(PostDetailsActivity.this, ProfileActivity.class);
                 startActivity(intent);
             });
         }
 
-        AvatarHelper.loadHeaderAvatar(this);
+        AvatarHelper.loadHeaderAvatar(this); // Load user avatar into top header
 
         int currentUserId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 1);
         int postIsAnonymous = getIntent().getIntExtra("POST_IS_ANONYMOUS", 0);
 
-        java.io.File userLocalFile = new java.io.File(getFilesDir(), "profile_user_" + postUserId + ".jpg");
+        // Load post author avatar
+        File userLocalFile = new File(getFilesDir(), "profile_user_" + postUserId + ".jpg");
         String avatarTarget = "";
         if (postIsAnonymous == 0 && userLocalFile.exists()) {
             avatarTarget = "file://" + userLocalFile.getAbsolutePath();
@@ -58,10 +67,11 @@ public class PostDetailsActivity extends AppCompatActivity {
         }
         AvatarHelper.loadAvatar(this, avatarTarget, findViewById(R.id.detailAvatarImage), findViewById(R.id.detailAvatarText));
 
+        // Load logged-in user avatar for comment input box
         String myPicUri = getSharedPreferences("AppPrefs", MODE_PRIVATE).getString("USER_PROFILE_PIC_URI_" + currentUserId, "");
         AvatarHelper.loadAvatar(this, myPicUri, findViewById(R.id.commentBoxAvatarImage), findViewById(R.id.commentBoxAvatarText));
 
-        // Retrieve post details from Intent
+        // Retrieve post details passed via Intent
         String author = getIntent().getStringExtra("POST_AUTHOR");
         String title = getIntent().getStringExtra("POST_TITLE");
         String content = getIntent().getStringExtra("POST_CONTENT");
@@ -81,6 +91,8 @@ public class PostDetailsActivity extends AppCompatActivity {
         if (timestampText != null && date != null && !date.isEmpty()) timestampText.setText(date);
         if (titleText != null && title != null && !title.isEmpty()) titleText.setText(title);
         if (contentText != null && content != null && !content.isEmpty()) contentText.setText(content);
+
+        // Save post button toggle listener
         TextView savePostButton = findViewById(R.id.savePostButton);
         if (savePostButton != null) {
             if (SavedPostsStore.contains(this, postId, currentUserId)) {
@@ -109,21 +121,24 @@ public class PostDetailsActivity extends AppCompatActivity {
                 }
             });
         }
+
+        // Bind attached image/file if available
         TextView attachment = findViewById(R.id.detailAttachment);
         View imagePlaceholder = findViewById(R.id.detailImageContainer);
         if (imagePlaceholder != null) {
             imagePlaceholder.setVisibility(isImageAttachment(fileUrl) ? View.VISIBLE : View.GONE);
             if (isImageAttachment(fileUrl)) {
-                PostAttachmentHelper.loadImage(this, fileUrl,
-                        findViewById(R.id.detailImagePlaceholder));
+                PostAttachmentHelper.loadImage(this, fileUrl, findViewById(R.id.detailImagePlaceholder));
             }
         }
         if (attachment != null && fileUrl != null && !fileUrl.isEmpty()) {
             String fileName = android.net.Uri.parse(fileUrl).getLastPathSegment();
-            attachment.setText("📎 Download attachment" + (fileName.isEmpty() ? "" : ": " + fileName));
+            attachment.setText("📎 Download attachment" + (fileName == null || fileName.isEmpty() ? "" : ": " + fileName));
             attachment.setVisibility(View.VISIBLE);
             attachment.setOnClickListener(v -> showAttachmentOptions(fileUrl, fileName));
         }
+
+        // Like button toggle listener
         if (approvalsText != null) {
             approvalsText.setText("👍 " + approvals + " Likes");
             final boolean[] isApproved = {false};
@@ -143,6 +158,7 @@ public class PostDetailsActivity extends AppCompatActivity {
             });
         }
 
+        // Dislike button toggle listener
         if (dislikesText != null) {
             dislikesText.setText("👎 " + shares + " Dislikes");
             final boolean[] isDisliked = {false};
@@ -162,6 +178,7 @@ public class PostDetailsActivity extends AppCompatActivity {
             });
         }
 
+        // Send Comment button listener
         EditText commentInput = findViewById(R.id.commentInput);
         View btnSend = findViewById(R.id.btnSendComment);
         if (btnSend != null && commentInput != null) {
@@ -179,6 +196,7 @@ public class PostDetailsActivity extends AppCompatActivity {
                 SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
                 int userId = prefs.getInt("USER_ID", 1);
 
+                // Call backend API to post comment
                 ApiService apiService = ApiClient.getClient().create(ApiService.class);
                 Call<GenericResponse> call = apiService.addComment(postId, userId, text);
                 call.enqueue(new Callback<GenericResponse>() {
@@ -187,7 +205,7 @@ public class PostDetailsActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
                             commentInput.setText("");
                             Toast.makeText(PostDetailsActivity.this, "Comment posted!", Toast.LENGTH_SHORT).show();
-                            fetchComments();
+                            fetchComments(); // Refresh comments
                         } else {
                             Toast.makeText(PostDetailsActivity.this, "Failed to post comment.", Toast.LENGTH_SHORT).show();
                         }
@@ -202,6 +220,9 @@ public class PostDetailsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Shows attachment options bottom sheet (View vs Download).
+     */
     private void showAttachmentOptions(String fileUrl, String fileName) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_attachment_options, null);
@@ -225,18 +246,21 @@ public class PostDetailsActivity extends AppCompatActivity {
         return path.endsWith(".jpg") || path.endsWith(".jpeg") || path.endsWith(".png");
     }
 
+    /**
+     * Opens in-app photo viewer or system document viewer for attachments.
+     */
     private void viewAttachment(String fileUrl) {
         try {
             android.net.Uri uri = android.net.Uri.parse(fileUrl);
             String lower = fileUrl.toLowerCase();
             if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png") || lower.endsWith(".gif") || lower.endsWith(".webp")) {
                 android.app.Dialog imgDialog = new android.app.Dialog(this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
-                android.widget.ImageView imgView = new android.widget.ImageView(this);
+                ImageView imgView = new ImageView(this);
                 imgView.setLayoutParams(new android.view.ViewGroup.LayoutParams(
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT,
                         android.view.ViewGroup.LayoutParams.MATCH_PARENT));
-                imgView.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
-                imgView.setBackgroundColor(android.graphics.Color.BLACK);
+                imgView.setScaleType(ImageView.ScaleType.FIT_CENTER);
+                imgView.setBackgroundColor(Color.BLACK);
 
                 new Thread(() -> {
                     try {
@@ -262,6 +286,9 @@ public class PostDetailsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Enqueues download request with Android DownloadManager.
+     */
     private void downloadAttachment(String fileUrl, String fileName) {
         try {
             android.app.DownloadManager.Request request =
@@ -287,10 +314,13 @@ public class PostDetailsActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (postId > 0) {
-            fetchComments();
+            fetchComments(); // Reload comments
         }
     }
 
+    /**
+     * Fetches post comments from backend database.
+     */
     private void fetchComments() {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<List<CommentModel>> call = apiService.getComments(postId);
@@ -303,12 +333,13 @@ public class PostDetailsActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onFailure(Call<List<CommentModel>> call, Throwable t) {
-                // Ignore
-            }
+            public void onFailure(Call<List<CommentModel>> call, Throwable t) {}
         });
     }
 
+    /**
+     * Renders comment list into comments container.
+     */
     private void populateComments(List<CommentModel> comments) {
         LinearLayout container = findViewById(R.id.commentsContainer);
         TextView titleText = findViewById(R.id.commentsTitleText);
@@ -328,7 +359,7 @@ public class PostDetailsActivity extends AppCompatActivity {
         if (comments == null || comments.isEmpty()) {
             TextView emptyText = new TextView(this);
             emptyText.setText("No comments yet. Be the first to comment!");
-            emptyText.setTextColor(android.graphics.Color.parseColor("#888888"));
+            emptyText.setTextColor(Color.parseColor("#888888"));
             emptyText.setTextSize(12f);
             emptyText.setGravity(android.view.Gravity.CENTER);
             emptyText.setPadding(32, 24, 32, 24);
@@ -340,7 +371,7 @@ public class PostDetailsActivity extends AppCompatActivity {
                 TextView timestamp = commentView.findViewById(R.id.commentTimestamp);
                 TextView content = commentView.findViewById(R.id.commentContent);
                 TextView optionsBtn = commentView.findViewById(R.id.commentOptionsBtn);
-                android.widget.ImageView commentAvatarImage = commentView.findViewById(R.id.commentAvatarImage);
+                ImageView commentAvatarImage = commentView.findViewById(R.id.commentAvatarImage);
                 TextView commentAvatarText = commentView.findViewById(R.id.commentAvatarText);
 
                 if (author != null) author.setText(comment.getAuthorName() != null && !comment.getAuthorName().isEmpty() ? comment.getAuthorName() : "Student");
@@ -348,7 +379,7 @@ public class PostDetailsActivity extends AppCompatActivity {
                 if (content != null) content.setText(comment.getContent());
 
                 String avatarTarget = comment.getProfilePicUrl();
-                java.io.File commentUserFile = new java.io.File(getFilesDir(), "profile_user_" + comment.getUserId() + ".jpg");
+                File commentUserFile = new File(getFilesDir(), "profile_user_" + comment.getUserId() + ".jpg");
                 if (commentUserFile.exists()) {
                     avatarTarget = "file://" + commentUserFile.getAbsolutePath();
                 }
@@ -381,6 +412,9 @@ public class PostDetailsActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Shows comment options bottom sheet (Edit/Delete).
+     */
     private void showCommentOptions(CommentModel comment, int currentUserId) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_comment_options, null);
@@ -406,6 +440,9 @@ public class PostDetailsActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Sends comment deletion request to backend API.
+     */
     private void deleteComment(int commentId, int userId) {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<GenericResponse> call = apiService.deleteComment(commentId, userId);
@@ -427,6 +464,9 @@ public class PostDetailsActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Shows 3-dots popup options for the post.
+     */
     public void showPostOptions(View view) {
         SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
         int currentUserId = prefs.getInt("USER_ID", 0);
@@ -491,6 +531,9 @@ public class PostDetailsActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /**
+     * Sends post deletion request to backend API.
+     */
     private void deletePost(int postId, int userId) {
         ApiService apiService = ApiClient.getClient().create(ApiService.class);
         Call<GenericResponse> call = apiService.deletePost(postId, userId);
@@ -502,7 +545,6 @@ public class PostDetailsActivity extends AppCompatActivity {
                     finish();
                 } else {
                     Toast.makeText(PostDetailsActivity.this, "Failed to delete post.", Toast.LENGTH_SHORT).show();
-                    
                 }
             }
 

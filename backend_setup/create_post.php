@@ -5,6 +5,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
 include_once 'db_connect.php';
+require_once __DIR__ . '/MobileAiModeration.php';
 
 $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
 $title = isset($_POST['title']) ? trim($_POST['title']) : '';
@@ -86,6 +87,10 @@ if($user_id > 0 && !empty($title) && !empty($content)){
     $stmt->bindParam(':is_anonymous', $is_anonymous);
 
     if($stmt->execute()){
+        $postId = (int)$conn->lastInsertId();
+        $moderation = new MobileAiModeration($conn);
+        $review = $moderation->inspect($title . "\n" . $content);
+        $moderation->recordPost($postId, $review);
         http_response_code(200);
         echo json_encode(array(
             "success" => true,

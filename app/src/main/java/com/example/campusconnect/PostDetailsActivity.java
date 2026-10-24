@@ -522,6 +522,7 @@ public class PostDetailsActivity extends AppCompatActivity {
                 optionReport.setOnClickListener(v -> {
                     dialog.dismiss();
                     Intent intent = new Intent(PostDetailsActivity.this, ReportPostActivity.class);
+                    intent.putExtra("POST_ID", postId);
                     startActivity(intent);
                 });
             }

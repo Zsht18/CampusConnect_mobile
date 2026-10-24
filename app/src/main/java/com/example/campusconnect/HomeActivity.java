@@ -24,6 +24,7 @@ import com.example.campusconnect.api.ApiService;
 import com.example.campusconnect.models.GenericResponse;
 import com.example.campusconnect.models.PostModel;
 import com.example.campusconnect.models.SearchModel;
+import com.example.campusconnect.models.NotificationModel;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.io.File;
@@ -52,6 +53,7 @@ public class HomeActivity extends AppCompatActivity {
         View feedTop = findViewById(R.id.feedTop);
 
         View profileIconBtn = findViewById(R.id.profileIconBtn);
+        View notificationsBtn = findViewById(R.id.notificationsBtn);
         View btnAddPost = findViewById(R.id.btnAddPost);
 
         // Open Profile screen when header avatar icon is tapped
@@ -60,6 +62,9 @@ public class HomeActivity extends AppCompatActivity {
                 Intent intent = new Intent(HomeActivity.this, ProfileActivity.class);
                 startActivity(intent);
             });
+        }
+        if (notificationsBtn != null) {
+            notificationsBtn.setOnClickListener(v -> fetchNotifications());
         }
 
         // Open Create Post screen when "+" button is tapped
@@ -93,6 +98,7 @@ public class HomeActivity extends AppCompatActivity {
                     break;
                 }
             }
+
             collegeSpinner.setPopupBackgroundDrawable(getDrawable(R.drawable.college_spinner_popup_bg));
             
             // Filter feed when a different college is selected
@@ -240,6 +246,45 @@ public class HomeActivity extends AppCompatActivity {
 
     private void fetchLivePosts() {
         fetchLivePosts(null);
+    }
+
+    private void fetchNotifications() {
+        int userId = getSharedPreferences("AppPrefs", MODE_PRIVATE).getInt("USER_ID", 0);
+        if (userId <= 0) {
+            Toast.makeText(this, "User session not found.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        ApiClient.getClient().create(ApiService.class).getNotifications(userId)
+                .enqueue(new Callback<List<NotificationModel>>() {
+                    @Override
+                    public void onResponse(Call<List<NotificationModel>> call, Response<List<NotificationModel>> response) {
+                        if (!response.isSuccessful() || response.body() == null) {
+                            Toast.makeText(HomeActivity.this, "Unable to load notifications.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        List<NotificationModel> notifications = response.body();
+                        if (notifications.isEmpty()) {
+                            Toast.makeText(HomeActivity.this, "No notifications.", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        StringBuilder message = new StringBuilder();
+                        for (NotificationModel notification : notifications) {
+                            message.append(notification.getTitle()).append("\n")
+                                    .append(notification.getMessage()).append("\n")
+                                    .append(notification.getCreatedAt()).append("\n\n");
+                        }
+                        new androidx.appcompat.app.AlertDialog.Builder(HomeActivity.this)
+                                .setTitle("Notifications")
+                                .setMessage(message.toString().trim())
+                                .setPositiveButton("Close", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onFailure(Call<List<NotificationModel>> call, Throwable t) {
+                        Toast.makeText(HomeActivity.this, "Unable to load notifications.", Toast.LENGTH_SHORT).show();
+                    }
+                });
     }
 
     /**
@@ -617,6 +662,9 @@ public class HomeActivity extends AppCompatActivity {
                 optionReport.setOnClickListener(v -> {
                     dialog.dismiss();
                     Intent intent = new Intent(HomeActivity.this, ReportPostActivity.class);
+                    if (post != null) {
+                        intent.putExtra("POST_ID", post.getId());
+                    }
                     startActivity(intent);
                 });
             }

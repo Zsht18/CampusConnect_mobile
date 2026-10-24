@@ -70,6 +70,11 @@ public interface ApiService {
     @retrofit2.http.GET("get_trending_searches.php")
     Call<java.util.List<com.example.campusconnect.models.SearchModel>> getTrendingSearches();
 
+    @retrofit2.http.GET("get_notifications.php")
+    Call<java.util.List<com.example.campusconnect.models.NotificationModel>> getNotifications(
+            @retrofit2.http.Query("user_id") int userId
+    );
+
     @FormUrlEncoded
     @POST("add_comment.php")
     Call<com.example.campusconnect.models.GenericResponse> addComment(
@@ -122,5 +127,14 @@ public interface ApiService {
     Call<com.example.campusconnect.models.GenericResponse> uploadProfilePic(
             @Field("user_id") int userId,
             @Field("image") String base64Image
+    );
+
+    @FormUrlEncoded
+    @POST("submit_report.php")
+    Call<com.example.campusconnect.models.GenericResponse> submitReport(
+            @Field("post_id") int postId,
+            @Field("reporter_user_id") int reporterUserId,
+            @Field("reason") String reason,
+            @Field("additional_comments") String additionalComments
     );
 }

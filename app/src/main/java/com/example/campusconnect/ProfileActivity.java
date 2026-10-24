@@ -453,6 +453,9 @@ public class ProfileActivity extends AppCompatActivity {
                 optionReport.setOnClickListener(v -> {
                     dialog.dismiss();
                     Intent intent = new Intent(ProfileActivity.this, ReportPostActivity.class);
+                    if (post != null) {
+                        intent.putExtra("POST_ID", post.getId());
+                    }
                     startActivity(intent);
                 });
             }

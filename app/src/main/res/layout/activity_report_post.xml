@@ -264,6 +264,7 @@
                     android:paddingEnd="24dp">
 
                     <EditText
+                        android:id="@+id/reportDetailsInput"
                         android:layout_width="match_parent"
                         android:layout_height="100dp"
                         android:background="@drawable/report_input_bg"

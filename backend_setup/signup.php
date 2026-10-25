@@ -5,6 +5,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
 include_once 'db_connect.php';
+include_once 'account_status.php';
 
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $id_number = isset($_POST['id_number']) ? trim($_POST['id_number']) : '';
@@ -23,6 +24,11 @@ if(!empty($email) && !empty($id_number) && !empty($full_name) && !empty($usernam
         http_response_code(200);
         echo json_encode(array("success" => false, "message" => "Institutional/School Emails Only"));
         exit();
+    }
+
+    $restriction = cc_account_restriction($conn, $email, $id_number, $username);
+    if($restriction !== ''){
+        cc_restriction_response($restriction);
     }
 
     // Check if email, id_number, or username already exists (case-insensitive)

@@ -12,6 +12,13 @@ public class GenericResponse {
     @SerializedName("file_url")
     private String fileUrl;
 
+    @SerializedName("account_status")
+    private String accountStatus;
+
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
     public boolean isSuccess() {
         return success;
     }

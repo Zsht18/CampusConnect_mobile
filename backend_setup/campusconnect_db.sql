@@ -16,6 +16,22 @@ CREATE TABLE `mobile_users` (
   UNIQUE KEY `idnumber_unique` (`id_number`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `admin_mobile_login_logs` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `mobile_user_id` int(11) NOT NULL,
+  `full_name` varchar(100) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `institutional_email` varchar(100) NOT NULL,
+  `session_token_hash` char(64) NOT NULL,
+  `login_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `last_activity_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `logout_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `admin_mobile_login_token` (`session_token_hash`),
+  KEY `admin_mobile_login_active` (`logout_at`,`last_activity_at`),
+  KEY `admin_mobile_login_user` (`mobile_user_id`,`login_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `mobile_posts` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,

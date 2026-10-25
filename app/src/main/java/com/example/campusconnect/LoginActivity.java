@@ -70,6 +70,7 @@ public class LoginActivity extends AppCompatActivity {
                                 }
                                 editor.putString("USER_CREATED_AT", response.body().getUser().getCreatedAt());
                                 editor.putInt("USER_POSTS_COUNT", response.body().getUser().getPostsCount());
+                                editor.putString("USER_SESSION_TOKEN", response.body().getSessionToken());
                                 try {
                                     int userId = Integer.parseInt(response.body().getUser().getId());
                                     editor.putInt("USER_ID", userId);
@@ -89,8 +90,9 @@ public class LoginActivity extends AppCompatActivity {
                                 Intent intent = new Intent(LoginActivity.this, HomeActivity.class);
                                 startActivity(intent);
                                 finish(); // Close login screen
+                            } else if (AccountRestrictionDialog.isRestricted(response.body().getAccountStatus())) {
+                                AccountRestrictionDialog.show(LoginActivity.this, response.body().getAccountStatus());
                             } else {
-                                // Display error message returned by server (e.g. "Wrong password")
                                 Toast.makeText(LoginActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         } else {

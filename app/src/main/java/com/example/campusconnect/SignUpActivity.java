@@ -82,6 +82,10 @@ public class SignUpActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
                         if (response.isSuccessful() && response.body() != null) {
+                            if (AccountRestrictionDialog.isRestricted(response.body().getAccountStatus())) {
+                                AccountRestrictionDialog.show(SignUpActivity.this, response.body().getAccountStatus());
+                                return;
+                            }
                             Toast.makeText(SignUpActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                             if (response.body().isSuccess()) {
                                 showEnterOtpDialog(email); // Show OTP verification popup
@@ -139,6 +143,10 @@ public class SignUpActivity extends AppCompatActivity {
                 @Override
                 public void onResponse(Call<SignupResponse> call, Response<SignupResponse> response) {
                     if (response.isSuccessful() && response.body() != null) {
+                        if (AccountRestrictionDialog.isRestricted(response.body().getAccountStatus())) {
+                            AccountRestrictionDialog.show(SignUpActivity.this, response.body().getAccountStatus());
+                            return;
+                        }
                         Toast.makeText(SignUpActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
                         if (response.body().isSuccess()) {
                             finish(); // Account created, return to Login

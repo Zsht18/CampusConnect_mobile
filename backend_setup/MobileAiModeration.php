@@ -58,12 +58,12 @@ final class MobileAiModeration
             return;
         }
         $statement = $this->db->prepare(
-            'INSERT INTO admin_mobile_post_moderation
+            "INSERT INTO admin_mobile_post_moderation
                 (mobile_post_id, status, ai_flagged, ai_categories)
              VALUES (?, 'pending', ?, ?)
              ON DUPLICATE KEY UPDATE
                 status = 'pending', ai_flagged = VALUES(ai_flagged),
-                ai_categories = VALUES(ai_categories)'
+                ai_categories = VALUES(ai_categories)"
         );
         $statement->execute([
             $postId,
@@ -78,12 +78,12 @@ final class MobileAiModeration
             return;
         }
         $statement = $this->db->prepare(
-            'INSERT INTO admin_mobile_comment_moderation
+            "INSERT INTO admin_mobile_comment_moderation
                 (mobile_comment_id, status, ai_flagged, ai_categories)
              VALUES (?, 'hidden', ?, ?)
              ON DUPLICATE KEY UPDATE
                 status = 'hidden', ai_flagged = VALUES(ai_flagged),
-                ai_categories = VALUES(ai_categories)'
+                ai_categories = VALUES(ai_categories)"
         );
         $statement->execute([
             $commentId,
@@ -140,21 +140,21 @@ final class MobileAiModeration
     private function apiKey(): string
     {
         $key = getenv('OPENAI_API_KEY');
-        if (is_string($key) && trim($key) !== '') {
+        if (is_string($key) && trim($key) !== '' && trim($key) !== 'PASTE_YOUR_OPENAI_API_KEY_HERE') {
             return trim($key);
         }
         $key = $_SERVER['OPENAI_API_KEY'] ?? '';
-        if (is_string($key) && trim($key) !== '') {
+        if (is_string($key) && trim($key) !== '' && trim($key) !== 'PASTE_YOUR_OPENAI_API_KEY_HERE') {
             return trim($key);
         }
         $localFiles = [
-            __DIR__ . '/../CampusConnect_admin/CampusConnect_admin/config/openai.local.php',
+            dirname(__DIR__, 2) . '/CampusConnect_admin/CampusConnect_admin/config/openai.local.php',
             __DIR__ . '/config/openai.local.php',
         ];
         foreach ($localFiles as $file) {
             if (is_file($file)) {
                 $value = require $file;
-                if (is_string($value) && trim($value) !== '') {
+                if (is_string($value) && trim($value) !== '' && trim($value) !== 'PASTE_YOUR_OPENAI_API_KEY_HERE') {
                     return trim($value);
                 }
             }

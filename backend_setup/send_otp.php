@@ -5,6 +5,7 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
 include_once 'db_connect.php';
+include_once 'account_status.php';
 
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 
@@ -18,6 +19,11 @@ if(!empty($email)){
         http_response_code(200);
         echo json_encode(array("success" => false, "message" => "Institutional/School Emails Only"));
         exit();
+    }
+
+    $restriction = cc_account_restriction($conn, $email);
+    if($restriction !== ''){
+        cc_restriction_response($restriction);
     }
 
     $otp_code = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);

@@ -7,6 +7,18 @@ public class LoginResponse {
     private String message;
     @com.google.gson.annotations.SerializedName("user")
     private UserData user;
+    @com.google.gson.annotations.SerializedName("account_status")
+    private String accountStatus;
+    @com.google.gson.annotations.SerializedName("session_token")
+    private String sessionToken;
+
+    public String getAccountStatus() {
+        return accountStatus;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
 
     public boolean isSuccess() {
         return success;

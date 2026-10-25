@@ -5,13 +5,14 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
 include_once 'db_connect.php';
+include_once 'account_status.php';
 
 $id_number = isset($_POST['id_number']) ? $_POST['id_number'] : '';
 $password = isset($_POST['password']) ? $_POST['password'] : '';
 
 if(!empty($id_number) && !empty($password)){
     // Fetch user from database and count their posts
-    $query = "SELECT u.id, u.id_number, u.full_name, u.username, u.profile_pic_url, u.password_hash, u.created_at,
+    $query = "SELECT u.id, u.id_number, u.institutional_email, u.full_name, u.username, u.profile_pic_url, u.password_hash, u.created_at,
               (SELECT COUNT(*) FROM mobile_posts WHERE user_id = u.id) as posts_count
               FROM mobile_users u WHERE u.id_number = :id_number LIMIT 0,1";
     $stmt = $conn->prepare($query);
@@ -25,6 +26,23 @@ if(!empty($id_number) && !empty($password)){
 
         // Verify Password
         if(password_verify($password, $row['password_hash'])){
+            $restriction = cc_account_restriction($conn, '', (string)$row['id_number']);
+            if($restriction !== ''){
+                cc_restriction_response($restriction);
+            }
+            $sessionToken = bin2hex(random_bytes(32));
+            $logSession = $conn->prepare(
+                "INSERT INTO admin_mobile_login_logs
+                    (mobile_user_id, full_name, username, institutional_email, session_token_hash)
+                 VALUES (?, ?, ?, ?, ?)"
+            );
+            $logSession->execute([
+                (int)$row['id'],
+                (string)$row['full_name'],
+                (string)$row['username'],
+                (string)$row['institutional_email'],
+                hash('sha256', $sessionToken)
+            ]);
             // Login Success
             $user_arr = array(
                 "id" => $row['id'],
@@ -40,7 +58,8 @@ if(!empty($id_number) && !empty($password)){
             echo json_encode(array(
                 "success" => true,
                 "message" => "Login successful.",
-                "user" => $user_arr
+                "user" => $user_arr,
+                "session_token" => $sessionToken
             ));
         } else {
             // Wrong Password

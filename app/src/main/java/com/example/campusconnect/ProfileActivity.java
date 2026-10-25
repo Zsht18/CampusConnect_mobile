@@ -842,17 +842,49 @@ public class ProfileActivity extends AppCompatActivity {
         if (btnConfirm != null) {
             btnConfirm.setOnClickListener(v -> {
                 dialog.dismiss();
-                SharedPreferences.Editor editor = prefs.edit();
-                editor.clear();
-                editor.apply();
+                String sessionToken = prefs.getString("USER_SESSION_TOKEN", "");
+                if (!sessionToken.isEmpty()) {
+                    prefs.edit().putString("PENDING_LOGOUT_SESSION_TOKEN", sessionToken).apply();
+                    ApiClient.getClient().create(ApiService.class)
+                            .mobileSessionLogout(sessionToken)
+                            .enqueue(new Callback<GenericResponse>() {
+                                @Override
+                                public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
+                                    if (!response.isSuccessful() || response.body() == null || !response.body().isSuccess()) {
+                                        android.util.Log.e("ProfileActivity", "Unable to record mobile logout (" + response.code() + ").");
+                                    } else {
+                                        prefs.edit().remove("PENDING_LOGOUT_SESSION_TOKEN").apply();
+                                    }
+                                    finishLogout(prefs);
+                                }
 
-                Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
+                                @Override
+                                public void onFailure(Call<GenericResponse> call, Throwable error) {
+                                    android.util.Log.e("ProfileActivity", "Unable to record mobile logout.", error);
+                                    finishLogout(prefs);
+                                }
+                            });
+                    return;
+                }
+                finishLogout(prefs);
             });
         }
 
         dialog.show();
+    }
+
+    private void finishLogout(SharedPreferences prefs) {
+        String pendingLogoutToken = prefs.getString("PENDING_LOGOUT_SESSION_TOKEN", "");
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.clear();
+        if (!pendingLogoutToken.isEmpty()) {
+            editor.putString("PENDING_LOGOUT_SESSION_TOKEN", pendingLogoutToken);
+        }
+        editor.apply();
+
+        Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

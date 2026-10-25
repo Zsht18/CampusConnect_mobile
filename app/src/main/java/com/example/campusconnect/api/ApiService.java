@@ -21,6 +21,18 @@ public interface ApiService {
     );
 
     @FormUrlEncoded
+    @POST("mobile_session_heartbeat.php")
+    Call<com.example.campusconnect.models.GenericResponse> mobileSessionHeartbeat(
+            @Field("session_token") String sessionToken
+    );
+
+    @FormUrlEncoded
+    @POST("mobile_session_logout.php")
+    Call<com.example.campusconnect.models.GenericResponse> mobileSessionLogout(
+            @Field("session_token") String sessionToken
+    );
+
+    @FormUrlEncoded
     @POST("signup.php")
     Call<com.example.campusconnect.models.SignupResponse> signup(
             @Field("email") String email,

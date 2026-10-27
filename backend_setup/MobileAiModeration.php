@@ -16,7 +16,7 @@ final class MobileAiModeration
         $containsProfanity = $this->containsProfanity($text);
         $apiKey = $this->apiKey();
         if ($apiKey === '') {
-            return ['available' => false, 'flagged' => $containsProfanity, 'categories' => $containsProfanity ? ['profanity', 'moderation_unavailable'] : ['moderation_unavailable']];
+            return $this->unavailable('OPENAI_API_KEY was not found in the PHP environment or supported config files.', $containsProfanity);
         }
 
         $payload = json_encode([
@@ -24,18 +24,18 @@ final class MobileAiModeration
             'input' => [['type' => 'text', 'text' => trim($text)]],
         ], JSON_UNESCAPED_SLASHES);
         if ($payload === false) {
-            return ['available' => false, 'flagged' => $containsProfanity, 'categories' => $containsProfanity ? ['profanity', 'moderation_unavailable'] : ['moderation_unavailable']];
+            return $this->unavailable('Could not encode the moderation request: ' . json_last_error_msg(), $containsProfanity);
         }
 
         $response = $this->request($apiKey, $payload);
         if ($response === null) {
-            return ['available' => false, 'flagged' => $containsProfanity, 'categories' => $containsProfanity ? ['profanity', 'moderation_unavailable'] : ['moderation_unavailable']];
+            return $this->failureReview($containsProfanity);
         }
 
         $result = json_decode($response, true);
         $moderation = is_array($result) ? ($result['results'][0] ?? null) : null;
         if (!is_array($moderation) || !is_array($moderation['categories'] ?? null)) {
-            return ['available' => false, 'flagged' => $containsProfanity, 'categories' => $containsProfanity ? ['profanity', 'moderation_unavailable'] : ['moderation_unavailable']];
+            return $this->unavailable('The moderation API response was not valid moderation JSON.', $containsProfanity);
         }
 
         $categories = array_keys(array_filter(
@@ -108,7 +108,11 @@ final class MobileAiModeration
     {
         if (function_exists('curl_init')) {
             $curl = curl_init('https://api.openai.com/v1/moderations');
-            curl_setopt_array($curl, [
+            if ($curl === false) {
+                $this->logFailure('Could not initialize cURL.');
+                return null;
+            }
+            if (!curl_setopt_array($curl, [
                 CURLOPT_POST => true,
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_HTTPHEADER => [
@@ -117,13 +121,29 @@ final class MobileAiModeration
                 ],
                 CURLOPT_POSTFIELDS => $payload,
                 CURLOPT_TIMEOUT => 15,
-            ]);
+            ])) {
+                $error = curl_error($curl);
+                curl_close($curl);
+                $this->logFailure('Could not configure cURL: ' . ($error !== '' ? $error : 'unknown cURL error'));
+                return null;
+            }
             $response = curl_exec($curl);
             $status = (int)curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            $error = curl_error($curl);
+            $errorNumber = curl_errno($curl);
             curl_close($curl);
-            return is_string($response) && $status >= 200 && $status < 300 ? $response : null;
+            if (!is_string($response)) {
+                $this->logFailure('cURL request failed (' . $errorNumber . '): ' . ($error !== '' ? $error : 'unknown transport error'));
+                return null;
+            }
+            if ($status < 200 || $status >= 300) {
+                $this->logFailure('OpenAI moderation API returned HTTP ' . $status . '.');
+                return null;
+            }
+            return $response;
         }
 
+        error_clear_last();
         $context = stream_context_create([
             'http' => [
                 'method' => 'POST',
@@ -134,7 +154,43 @@ final class MobileAiModeration
             ],
         ]);
         $response = @file_get_contents('https://api.openai.com/v1/moderations', false, $context);
-        return is_string($response) ? $response : null;
+        $lastError = error_get_last();
+        $status = 0;
+        foreach ($http_response_header ?? [] as $header) {
+            if (preg_match('/^HTTP\/\S+\s+(\d{3})/', $header, $matches)) {
+                $status = (int)$matches[1];
+            }
+        }
+        if (!is_string($response)) {
+            $detail = is_array($lastError) ? (string)$lastError['message'] : 'unknown stream transport error';
+            $this->logFailure('HTTP stream request failed' . ($status ? ' with HTTP ' . $status : '') . ': ' . $detail);
+            return null;
+        }
+        if ($status < 200 || $status >= 300) {
+            $this->logFailure('OpenAI moderation API returned HTTP ' . $status . ' using the HTTP stream transport.');
+            return null;
+        }
+        return $response;
+    }
+
+    private function unavailable(string $reason, bool $containsProfanity): array
+    {
+        $this->logFailure($reason);
+        return $this->failureReview($containsProfanity);
+    }
+
+    private function failureReview(bool $containsProfanity): array
+    {
+        return [
+            'available' => false,
+            'flagged' => $containsProfanity,
+            'categories' => $containsProfanity ? ['profanity', 'moderation_unavailable'] : ['moderation_unavailable'],
+        ];
+    }
+
+    private function logFailure(string $reason): void
+    {
+        error_log('[CampusConnect mobile AI moderation] ' . $reason);
     }
 
     private function apiKey(): string
@@ -148,6 +204,7 @@ final class MobileAiModeration
             return trim($key);
         }
         $localFiles = [
+            __DIR__ . '/openai.local.php',
             dirname(__DIR__, 2) . '/CampusConnect_admin/CampusConnect_admin/config/openai.local.php',
             __DIR__ . '/config/openai.local.php',
         ];

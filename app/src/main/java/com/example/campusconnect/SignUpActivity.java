@@ -129,6 +129,11 @@ public class SignUpActivity extends AppCompatActivity {
                 return;
             }
 
+            if (!isValidStrongPassword(password)) {
+                Toast.makeText(SignUpActivity.this, "Password must be at least 8 characters long and contain both letters and numbers.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
             if (!password.equals(retypePassword)) {
                 Toast.makeText(SignUpActivity.this, "Passwords do not match.", Toast.LENGTH_SHORT).show();
                 return;
@@ -247,5 +252,14 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         return lowerEmail.contains(".edu") || lowerEmail.contains(".ac.");
+    }
+
+    private boolean isValidStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*[0-9].*");
+        return hasLetter && hasDigit;
     }
 }

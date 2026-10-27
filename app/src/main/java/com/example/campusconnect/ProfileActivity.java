@@ -796,6 +796,10 @@ public class ProfileActivity extends AppCompatActivity {
                     Toast.makeText(this, "Please enter a new password.", Toast.LENGTH_SHORT).show();
                     return;
                 }
+                if (!isValidStrongPassword(newPass)) {
+                    Toast.makeText(this, "Password must be at least 8 characters long and contain both letters and numbers.", Toast.LENGTH_LONG).show();
+                    return;
+                }
                 if (!newPass.equals(confirmPass)) {
                     Toast.makeText(this, "New passwords do not match.", Toast.LENGTH_SHORT).show();
                     return;
@@ -886,5 +890,14 @@ public class ProfileActivity extends AppCompatActivity {
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
+    }
+
+    private boolean isValidStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        boolean hasLetter = password.matches(".*[a-zA-Z].*");
+        boolean hasDigit = password.matches(".*[0-9].*");
+        return hasLetter && hasDigit;
     }
 }

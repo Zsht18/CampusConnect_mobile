@@ -14,11 +14,22 @@ public final class AccountRestrictionDialog {
     }
 
     public static void show(Context context, String accountStatus) {
-        new AlertDialog.Builder(context)
+        show(context, accountStatus,
+                "Your account has been " + accountStatus
+                        + " in violation of the CampusConnect community guidelines.",
+                null);
+    }
+
+    public static void show(Context context, String accountStatus, String message, Runnable onDismiss) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle("Account " + accountStatus)
-                .setMessage("Your account has been " + accountStatus
-                        + " in violation of the CampusConnect community guidelines.")
-                .setPositiveButton("OK", null)
-                .show();
+                .setMessage(message)
+                .setCancelable(onDismiss == null)
+                .setPositiveButton("OK", (dialog, which) -> {
+                    if (onDismiss != null) {
+                        onDismiss.run();
+                    }
+                });
+        builder.show();
     }
 }

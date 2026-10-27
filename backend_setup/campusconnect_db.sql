@@ -90,6 +90,20 @@ CREATE TABLE `mobile_reports` (
   FOREIGN KEY (`reporter_user_id`) REFERENCES `mobile_users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS `mobile_comment_reports` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `comment_id` int(11) NOT NULL,
+  `reporter_user_id` int(11) NOT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `additional_comments` text DEFAULT NULL,
+  `status` varchar(50) NOT NULL DEFAULT 'Pending',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `mobile_comment_reports_status` (`status`),
+  KEY `mobile_comment_reports_comment` (`comment_id`),
+  KEY `mobile_comment_reports_reporter` (`reporter_user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE `mobile_notifications` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `user_id` int(11) NOT NULL,

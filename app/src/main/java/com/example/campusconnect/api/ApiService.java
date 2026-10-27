@@ -23,7 +23,8 @@ public interface ApiService {
     @FormUrlEncoded
     @POST("mobile_session_heartbeat.php")
     Call<com.example.campusconnect.models.GenericResponse> mobileSessionHeartbeat(
-            @Field("session_token") String sessionToken
+            @Field("session_token") String sessionToken,
+            @Field("user_id") int userId
     );
 
     @FormUrlEncoded
@@ -112,6 +113,23 @@ public interface ApiService {
     Call<com.example.campusconnect.models.GenericResponse> deleteComment(
             @Field("comment_id") int commentId,
             @Field("user_id") int userId
+    );
+
+    @FormUrlEncoded
+    @POST("update_comment.php")
+    Call<com.example.campusconnect.models.GenericResponse> updateComment(
+            @Field("comment_id") int commentId,
+            @Field("user_id") int userId,
+            @Field("content") String content
+    );
+
+    @FormUrlEncoded
+    @POST("submit_comment_report.php")
+    Call<com.example.campusconnect.models.GenericResponse> submitCommentReport(
+            @Field("comment_id") int commentId,
+            @Field("reporter_user_id") int reporterUserId,
+            @Field("reason") String reason,
+            @Field("additional_comments") String additionalComments
     );
 
     @FormUrlEncoded

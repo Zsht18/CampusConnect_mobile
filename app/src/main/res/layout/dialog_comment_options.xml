@@ -7,6 +7,54 @@
     android:orientation="vertical"
     android:padding="20dp">
 
+    <!-- Option: Report Comment -->
+    <LinearLayout
+        android:id="@+id/optionReportComment"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@drawable/search_bg"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:visibility="gone">
+
+        <androidx.cardview.widget.CardView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            app:cardBackgroundColor="#E6E6FA"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:text="🚩"
+                android:textSize="14sp" />
+        </androidx.cardview.widget.CardView>
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_weight="1"
+            android:text="Report Comment"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="›"
+            android:textColor="#999999"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <!-- Option: Edit Comment -->
     <LinearLayout
         android:id="@+id/optionEditComment"

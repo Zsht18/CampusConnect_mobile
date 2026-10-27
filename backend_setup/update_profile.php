@@ -32,6 +32,12 @@ if($user_id > 0){
     }
 
     if(!empty($new_password)){
+        if (strlen($new_password) < 8 || !preg_match('/[a-zA-Z]/', $new_password) || !preg_match('/[0-9]/', $new_password)) {
+            http_response_code(200);
+            echo json_encode(array("success" => false, "message" => "Password must be at least 8 characters long and contain both letters and numbers."));
+            exit();
+        }
+
         if(empty($old_password)){
             http_response_code(200);
             echo json_encode(array("success" => false, "message" => "Please enter your current password."));

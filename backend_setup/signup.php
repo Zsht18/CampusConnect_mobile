@@ -26,6 +26,12 @@ if(!empty($email) && !empty($id_number) && !empty($full_name) && !empty($usernam
         exit();
     }
 
+    if (strlen($password) < 8 || !preg_match('/[a-zA-Z]/', $password) || !preg_match('/[0-9]/', $password)) {
+        http_response_code(200);
+        echo json_encode(array("success" => false, "message" => "Password must be at least 8 characters long and contain both letters and numbers."));
+        exit();
+    }
+
     $restriction = cc_account_restriction($conn, $email, $id_number, $username);
     if($restriction !== ''){
         cc_restriction_response($restriction);

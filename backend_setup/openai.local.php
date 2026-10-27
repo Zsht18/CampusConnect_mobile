@@ -1,2 +1,0 @@
-<?php
-return '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';

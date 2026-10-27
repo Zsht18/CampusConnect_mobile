@@ -13,3 +13,5 @@
 .externalNativeBuild
 .cxx
 local.properties
+/backend_setup/openai.local.php
+/backend_setup/config/openai.local.php

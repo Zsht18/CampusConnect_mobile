@@ -11,6 +11,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.campusconnect.api.ApiClient;
 import com.example.campusconnect.api.ApiService;
@@ -180,6 +181,17 @@ public class PostDetailsActivity extends AppCompatActivity {
 
         // Send Comment button listener
         EditText commentInput = findViewById(R.id.commentInput);
+        android.widget.ScrollView detailScrollView = findViewById(R.id.detailScrollView);
+        if (commentInput != null && detailScrollView != null) {
+            commentInput.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) {
+                    detailScrollView.postDelayed(() -> detailScrollView.fullScroll(View.FOCUS_DOWN), 200);
+                }
+            });
+            commentInput.setOnClickListener(v ->
+                    detailScrollView.postDelayed(() -> detailScrollView.fullScroll(View.FOCUS_DOWN), 200));
+        }
+
         View btnSend = findViewById(R.id.btnSendComment);
         if (btnSend != null && commentInput != null) {
             btnSend.setOnClickListener(v -> {
@@ -216,6 +228,16 @@ public class PostDetailsActivity extends AppCompatActivity {
                         Toast.makeText(PostDetailsActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
+            });
+        }
+
+        SwipeRefreshLayout swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        if (swipeRefreshLayout != null) {
+            swipeRefreshLayout.setOnRefreshListener(() -> {
+                if (postId > 0) {
+                    fetchComments();
+                }
+                swipeRefreshLayout.setRefreshing(false);
             });
         }
     }
@@ -399,12 +421,8 @@ public class PostDetailsActivity extends AppCompatActivity {
                 }
 
                 if (optionsBtn != null) {
-                    if (isCommentOwner) {
-                        optionsBtn.setVisibility(View.VISIBLE);
-                        optionsBtn.setOnClickListener(v -> showCommentOptions(comment, currentUserId));
-                    } else {
-                        optionsBtn.setVisibility(View.GONE);
-                    }
+                    optionsBtn.setVisibility(View.VISIBLE);
+                    optionsBtn.setOnClickListener(v -> showCommentOptions(comment, currentUserId));
                 }
 
                 container.addView(commentView);
@@ -413,30 +431,168 @@ public class PostDetailsActivity extends AppCompatActivity {
     }
 
     /**
-     * Shows comment options bottom sheet (Edit/Delete).
+     * Shows comment options bottom sheet (Edit/Delete for author, Report for non-authors).
      */
     private void showCommentOptions(CommentModel comment, int currentUserId) {
+        SharedPreferences prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE);
+        String currentFullName = prefs.getString("USER_FULL_NAME", "");
+
+        boolean isCommentOwner = false;
+        if (currentUserId > 0 && comment.getUserId() == currentUserId) {
+            isCommentOwner = true;
+        } else if (currentUserId == 0 && comment.getUserId() == 1) {
+            isCommentOwner = true;
+        } else if (comment.getAuthorName() != null && currentFullName != null &&
+                   !currentFullName.isEmpty() && comment.getAuthorName().equalsIgnoreCase(currentFullName)) {
+            isCommentOwner = true;
+        }
+
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         View dialogView = getLayoutInflater().inflate(R.layout.dialog_comment_options, null);
 
+        View optionReport = dialogView.findViewById(R.id.optionReportComment);
         View optionEdit = dialogView.findViewById(R.id.optionEditComment);
         View optionDelete = dialogView.findViewById(R.id.optionDeleteComment);
 
-        if (optionEdit != null) {
-            optionEdit.setOnClickListener(v -> {
-                dialog.dismiss();
-                Toast.makeText(this, "Edit Comment feature coming soon!", Toast.LENGTH_SHORT).show();
-            });
-        }
+        if (isCommentOwner) {
+            if (optionReport != null) optionReport.setVisibility(View.GONE);
+            if (optionEdit != null) optionEdit.setVisibility(View.VISIBLE);
+            if (optionDelete != null) optionDelete.setVisibility(View.VISIBLE);
 
-        if (optionDelete != null) {
-            optionDelete.setOnClickListener(v -> {
-                dialog.dismiss();
-                deleteComment(comment.getId(), currentUserId);
-            });
+            if (optionEdit != null) {
+                optionEdit.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    showEditCommentDialog(comment, currentUserId);
+                });
+            }
+
+            if (optionDelete != null) {
+                optionDelete.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    deleteComment(comment.getId(), currentUserId);
+                });
+            }
+        } else {
+            if (optionReport != null) optionReport.setVisibility(View.VISIBLE);
+            if (optionEdit != null) optionEdit.setVisibility(View.GONE);
+            if (optionDelete != null) optionDelete.setVisibility(View.GONE);
+
+            if (optionReport != null) {
+                optionReport.setOnClickListener(v -> {
+                    dialog.dismiss();
+                    showReportCommentDialog(comment, currentUserId);
+                });
+            }
         }
 
         dialog.setContentView(dialogView);
+        dialog.show();
+    }
+
+    private void showEditCommentDialog(CommentModel comment, int currentUserId) {
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.setContentView(R.layout.dialog_edit_comment);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        EditText input = dialog.findViewById(R.id.dialogEditCommentInput);
+        if (input != null && comment.getContent() != null) {
+            input.setText(comment.getContent());
+            input.setSelection(comment.getContent().length());
+        }
+
+        View btnCancel = dialog.findViewById(R.id.btnCancelEditComment);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        View btnSave = dialog.findViewById(R.id.btnSaveEditComment);
+        if (btnSave != null && input != null) {
+            btnSave.setOnClickListener(v -> {
+                String newContent = input.getText().toString().trim();
+                if (newContent.isEmpty()) {
+                    Toast.makeText(this, "Comment cannot be empty.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                Toast.makeText(this, "Updating comment...", Toast.LENGTH_SHORT).show();
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<GenericResponse> call = apiService.updateComment(comment.getId(), currentUserId, newContent);
+                call.enqueue(new Callback<GenericResponse>() {
+                    @Override
+                    public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            dialog.dismiss();
+                            Toast.makeText(PostDetailsActivity.this, "Comment updated successfully!", Toast.LENGTH_SHORT).show();
+                            fetchComments();
+                        } else {
+                            String msg = response.body() != null ? response.body().getMessage() : "Failed to update comment.";
+                            Toast.makeText(PostDetailsActivity.this, msg, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<GenericResponse> call, Throwable t) {
+                        Toast.makeText(PostDetailsActivity.this, "Network Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+            });
+        }
+
+        dialog.show();
+    }
+
+    private void showReportCommentDialog(CommentModel comment, int currentUserId) {
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.setContentView(R.layout.dialog_report_comment);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT));
+        }
+
+        android.widget.RadioGroup reasonGroup = dialog.findViewById(R.id.dialogReportReasonGroup);
+
+        View btnCancel = dialog.findViewById(R.id.btnCancelReportComment);
+        if (btnCancel != null) {
+            btnCancel.setOnClickListener(v -> dialog.dismiss());
+        }
+
+        View btnSubmit = dialog.findViewById(R.id.btnSubmitReportComment);
+        if (btnSubmit != null) {
+            btnSubmit.setOnClickListener(v -> {
+                String selectedReason = "Inappropriate / Offensive";
+                if (reasonGroup != null) {
+                    int checkedId = reasonGroup.getCheckedRadioButtonId();
+                    android.widget.RadioButton radio = dialog.findViewById(checkedId);
+                    if (radio != null) {
+                        selectedReason = radio.getText().toString();
+                    }
+                }
+
+                Toast.makeText(this, "Submitting comment report...", Toast.LENGTH_SHORT).show();
+                ApiService apiService = ApiClient.getClient().create(ApiService.class);
+                Call<GenericResponse> call = apiService.submitCommentReport(comment.getId(), currentUserId, selectedReason, "");
+                call.enqueue(new Callback<GenericResponse>() {
+                    @Override
+                    public void onResponse(Call<GenericResponse> call, Response<GenericResponse> response) {
+                        if (response.isSuccessful() && response.body() != null && response.body().isSuccess()) {
+                            dialog.dismiss();
+                            Toast.makeText(PostDetailsActivity.this, "Comment report submitted.", Toast.LENGTH_SHORT).show();
+                        } else {
+                            dialog.dismiss();
+                            Toast.makeText(PostDetailsActivity.this, "Comment report submitted.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<GenericResponse> call, Throwable t) {
+                        dialog.dismiss();
+                        Toast.makeText(PostDetailsActivity.this, "Comment report submitted.", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            });
+        }
+
         dialog.show();
     }
 

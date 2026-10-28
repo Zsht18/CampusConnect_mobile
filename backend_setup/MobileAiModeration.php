@@ -35,7 +35,10 @@ final class MobileAiModeration
         $result = json_decode($response, true);
         $moderation = is_array($result) ? ($result['results'][0] ?? null) : null;
         if (!is_array($moderation) || !is_array($moderation['categories'] ?? null)) {
-            return $this->unavailable('The moderation API response was not valid moderation JSON.', $containsProfanity);
+            return $this->unavailable(
+                'The moderation API response was not valid moderation JSON: ' . json_last_error_msg(),
+                $containsProfanity
+            );
         }
 
         $categories = array_keys(array_filter(
@@ -137,7 +140,7 @@ final class MobileAiModeration
                 return null;
             }
             if ($status < 200 || $status >= 300) {
-                $this->logFailure('OpenAI moderation API returned HTTP ' . $status . '.');
+                $this->logFailure($this->apiErrorSummary($status, (string)$response));
                 return null;
             }
             return $response;
@@ -167,7 +170,11 @@ final class MobileAiModeration
             return null;
         }
         if ($status < 200 || $status >= 300) {
-            $this->logFailure('OpenAI moderation API returned HTTP ' . $status . ' using the HTTP stream transport.');
+            $this->logFailure($this->apiErrorSummary(
+                $status,
+                $response,
+                ' using the HTTP stream transport'
+            ));
             return null;
         }
         return $response;
@@ -193,9 +200,32 @@ final class MobileAiModeration
         error_log('[CampusConnect mobile AI moderation] ' . $reason);
     }
 
+    private function apiErrorSummary(int $status, string $response, string $transport = ''): string
+    {
+        $result = json_decode($response, true);
+        $error = is_array($result) && is_array($result['error'] ?? null)
+            ? $result['error']
+            : [];
+        $code = $error['code'] ?? null;
+        $type = $error['type'] ?? null;
+        $details = [];
+        if (is_string($code) && preg_match('/^[A-Za-z0-9_-]{1,80}$/', $code)) {
+            $details[] = 'code=' . $code;
+        }
+        if (is_string($type) && preg_match('/^[A-Za-z0-9_-]{1,80}$/', $type)) {
+            $details[] = 'type=' . $type;
+        }
+        return 'OpenAI moderation API returned HTTP ' . $status . $transport
+            . ($details ? ' (' . implode(', ', $details) . ')' : '.');
+    }
+
     private function apiKey(): string
     {
         $key = getenv('OPENAI_API_KEY');
+        if (is_string($key) && trim($key) !== '' && trim($key) !== 'PASTE_YOUR_OPENAI_API_KEY_HERE') {
+            return trim($key);
+        }
+        $key = $_ENV['OPENAI_API_KEY'] ?? '';
         if (is_string($key) && trim($key) !== '' && trim($key) !== 'PASTE_YOUR_OPENAI_API_KEY_HERE') {
             return trim($key);
         }
